@@ -1,0 +1,6 @@
+/* Global styles */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Quicksand', 'Segoe UI', sans-serif;
+}
