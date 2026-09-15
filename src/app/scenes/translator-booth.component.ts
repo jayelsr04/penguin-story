@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `// LegacyPhoneValidator itself
 // doesn't change at all
@@ -20,7 +21,7 @@ type SendState = 'idle' | 'sending' | 'done';
 @Component({
   selector: 'app-translator-booth',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Translator Booth"
@@ -34,12 +35,12 @@ type SendState = 'idle' | 'sending' | 'done';
       (jump)="jump.emit($event)"
     >
       <div old class="depts">
-        <div class="dept">🐧<div class="dept-name">Legacy Clerk</div></div>
+        <div class="dept"><span class="pip pip-sm"><app-penguin mood="confused" /></span><div class="dept-name">Legacy Clerk</div></div>
         <div class="wall">
           <div class="paper" [class.thrown]="oldState() === 'sending'">📄</div>
           <div class="dropped" [class.show]="oldState() === 'done'">lost</div>
         </div>
-        <div class="dept">🐧<div class="dept-name">Signal Forms</div></div>
+        <div class="dept"><span class="pip pip-sm"><app-penguin mood="confused" /></span><div class="dept-name">Signal Forms</div></div>
         <button type="button" class="tile-btn action-btn" (click)="sendOld()">
           {{ oldState() === 'done' ? 'Reset' : 'Send report' }}
         </button>
@@ -47,12 +48,14 @@ type SendState = 'idle' | 'sending' | 'done';
       </div>
 
       <div new class="depts">
-        <div class="dept">🐧<div class="dept-name">Legacy Clerk</div></div>
+        <div class="dept"><span class="pip pip-sm"><app-penguin mood="happy" /></span><div class="dept-name">Legacy Clerk</div></div>
         <div class="wall with-translator">
-          <div class="translator" [class.working]="newState() === 'sending'">🐧</div>
+          <div class="translator" [class.working]="newState() === 'sending'">
+            <span class="pip pip-xs"><app-penguin [mood]="newState() === 'sending' ? 'busy' : 'walking'" /></span>
+          </div>
           <div class="paper" [class.carried]="newState() === 'sending'">📄</div>
         </div>
-        <div class="dept">🐧<div class="dept-name">Signal Forms</div></div>
+        <div class="dept"><span class="pip pip-sm"><app-penguin mood="happy" /></span><div class="dept-name">Signal Forms</div></div>
         <button type="button" class="tile-btn action-btn" (click)="sendNew()">
           {{ newState() === 'done' ? 'Reset' : 'Send report' }}
         </button>

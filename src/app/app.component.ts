@@ -9,6 +9,7 @@ import { SeatRecheckBoothComponent } from './scenes/seat-recheck-booth.component
 import { NurseStationComponent } from './scenes/nurse-station.component';
 import { TranslatorBoothComponent } from './scenes/translator-booth.component';
 import { AdapterDeskComponent } from './scenes/adapter-desk.component';
+import { PenguinComponent } from './penguin/penguin.component';
 
 type Screen = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 'outro';
 
@@ -47,6 +48,7 @@ const RECAP = [
     NurseStationComponent,
     TranslatorBoothComponent,
     AdapterDeskComponent,
+    PenguinComponent,
   ],
   template: `
     <div class="app-shell">
@@ -54,6 +56,7 @@ const RECAP = [
       @switch (screen()) {
         @case ('intro') {
           <section class="cover">
+            <div class="cover-top">
             <div class="cover-left">
               <div class="status-tag"><span class="dot"></span> Angular Signal Forms v22 · Field Notes</div>
               <h1 class="cover-title">Eleven changes,<br>one form at a<br>time.</h1>
@@ -83,6 +86,20 @@ class CustomInput &#123;
   // could read AND overwrite "touched"
 &#125;</pre>
             </div>
+            </div>
+
+            <div class="iceberg-scene" aria-hidden="true">
+              <svg class="iceberg-art" viewBox="0 0 1200 240" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+                <circle class="moon" cx="1050" cy="52" r="30" />
+                <circle class="moon-halo" cx="1050" cy="52" r="52" />
+                <path class="ice-back" d="M0,150 L150,96 L280,150 L430,84 L560,150 L720,70 L880,150 L1040,100 L1200,150 L1200,240 L0,240 Z" />
+                <path class="ice-front" d="M0,182 L120,130 L260,182 L360,110 L470,182 L640,124 L800,182 L960,140 L1120,182 L1200,158 L1200,240 L0,240 Z" />
+                <path class="ice-lit" d="M360,110 L470,182 L400,182 Z" />
+                <path class="ice-lit" d="M640,124 L720,182 L660,182 Z" />
+                <rect class="water" x="0" y="182" width="1200" height="58" />
+              </svg>
+              <span class="pip pip-lg cover-pip"><app-penguin mood="happy" /></span>
+            </div>
           </section>
         }
         @case (1) { <app-notice-board (next)="go(2)" (prev)="go('intro')" (jump)="jumpTo($event)"></app-notice-board> }
@@ -98,8 +115,11 @@ class CustomInput &#123;
         @case ('outro') {
           <section class="outro">
             <div class="outro-head">
-              <div class="status-tag"><span class="dot"></span> Tour complete</div>
-              <h1 class="cover-title">You've seen all {{ totalChanges() }} changes.</h1>
+              <span class="pip pip-md outro-pip"><app-penguin mood="proud" /></span>
+              <div>
+                <div class="status-tag"><span class="dot"></span> Tour complete</div>
+                <h1 class="cover-title">You've seen all {{ totalChanges() }} changes.</h1>
+              </div>
             </div>
             <div class="recap-grid">
               @for (wing of recap; track wing.wing) {
@@ -124,9 +144,46 @@ class CustomInput &#123;
     :host {
       display: block;
       min-height: 100vh;
-      background: var(--bg);
+      position: relative;
+      isolation: isolate;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(120% 80% at 50% -18%, var(--scene-glow) 0%, transparent 52%),
+        radial-gradient(80% 50% at 88% 2%, var(--scene-glow-warm) 0%, transparent 60%),
+        radial-gradient(150% 65% at 50% 120%, var(--scene-floor) 0%, transparent 62%);
+      background-attachment: fixed;
+    }
+    /* Faint stars — visible only in dark theme (star color is transparent in light) */
+    :host::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-repeat: no-repeat;
+      background-image:
+        radial-gradient(1.5px 1.5px at 12% 16%, var(--scene-star), transparent),
+        radial-gradient(1.5px 1.5px at 27% 9%, var(--scene-star), transparent),
+        radial-gradient(1px 1px at 63% 13%, var(--scene-star), transparent),
+        radial-gradient(1.5px 1.5px at 81% 21%, var(--scene-star), transparent),
+        radial-gradient(1px 1px at 91% 10%, var(--scene-star), transparent),
+        radial-gradient(1px 1px at 45% 26%, var(--scene-star), transparent),
+        radial-gradient(1.5px 1.5px at 7% 31%, var(--scene-star), transparent),
+        radial-gradient(1px 1px at 70% 30%, var(--scene-star), transparent);
+      opacity: 0.9;
+    }
+    /* Soft vignette for depth (darkens edges — only strengthens contrast) */
+    :host::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(125% 100% at 50% 38%, transparent 55%, var(--scene-vignette) 100%);
     }
     .app-shell {
+      position: relative;
+      z-index: 1;
       padding: clamp(32px, 6vh, 72px) clamp(20px, 4vw, 64px);
     }
     .screen-content {
@@ -154,10 +211,44 @@ class CustomInput &#123;
     .cover {
       max-width: 1500px;
       margin: 0 auto;
+    }
+    .cover-top {
       display: grid;
       grid-template-columns: 1.1fr 0.9fr;
       gap: 64px;
       align-items: center;
+    }
+
+    /* Iceberg horizon illustration under the intro hero */
+    .iceberg-scene {
+      position: relative;
+      margin-top: clamp(28px, 5vh, 56px);
+      width: 100%;
+      height: clamp(140px, 20vh, 220px);
+    }
+    .iceberg-art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .iceberg-art .moon { fill: var(--ice-lit); opacity: 0.75; }
+    .iceberg-art .moon-halo { fill: var(--scene-glow); }
+    .iceberg-art .ice-back { fill: var(--ice); opacity: 0.7; }
+    .iceberg-art .ice-front { fill: var(--ice-2); }
+    .iceberg-art .ice-lit { fill: var(--ice-lit); opacity: 0.85; }
+    .iceberg-art .water { fill: var(--scene-floor); }
+    .cover-pip {
+      position: absolute;
+      left: 12%;
+      bottom: 26%;
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.28));
+      animation: pip-bob 3.2s ease-in-out infinite;
+    }
+    @keyframes pip-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
     }
     .cover-left { max-width: 620px; }
     .cover-title {
@@ -211,7 +302,8 @@ class CustomInput &#123;
     }
 
     .outro { max-width: 1500px; margin: 0 auto; }
-    .outro-head { margin-bottom: 32px; }
+    .outro-head { margin-bottom: 32px; display: flex; align-items: center; gap: 20px; }
+    .outro-pip { filter: drop-shadow(0 5px 9px rgba(0, 0, 0, 0.25)); }
     .recap-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -244,7 +336,7 @@ class CustomInput &#123;
     .recap-card li:first-child { border-top: none; padding-top: 0; }
 
     @media (max-width: 980px) {
-      .cover { grid-template-columns: 1fr; }
+      .cover-top { grid-template-columns: 1fr; }
     }
   `],
 })

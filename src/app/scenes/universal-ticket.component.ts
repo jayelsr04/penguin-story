@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `disabled(f.shippingAddress,
   () => f.sameAsBilling().value());
@@ -30,7 +31,7 @@ readonly(f.accountId, {
 @Component({
   selector: 'app-universal-ticket',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="Four Booths, One Rule"
@@ -43,7 +44,9 @@ readonly(f.accountId, {
       (prev)="prev.emit()"
       (jump)="jump.emit($event)"
     >
-      <div old class="booths">
+      <div old class="ticket-scene">
+        <span class="pip pip-md"><app-penguin mood="confused" /></span>
+        <div class="booths">
         @for (b of booths; track b.name; let i = $index) {
           <div class="booth">
             <div class="booth-name">{{ b.name }}</div>
@@ -53,9 +56,12 @@ readonly(f.accountId, {
           </div>
         }
         <div class="stat">{{ oldRevealedCount() }} / 4 shapes learned</div>
+        </div>
       </div>
 
-      <div new class="booths">
+      <div new class="ticket-scene">
+        <span class="pip pip-md"><app-penguin [mood]="newRevealed() ? 'proud' : 'happy'" /></span>
+        <div class="booths">
         @for (b of booths; track b.name) {
           <div class="booth">
             <div class="booth-name">{{ b.name }}</div>
@@ -65,10 +71,18 @@ readonly(f.accountId, {
           </div>
         }
         <div class="stat" [class.win]="newRevealed()">{{ newRevealed() ? '1 click — all 4 done' : 'Click any booth' }}</div>
+        </div>
       </div>
     </app-room-shell>
   `,
   styles: [`
+    .ticket-scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+    }
     .booths {
       display: flex;
       justify-content: space-around;

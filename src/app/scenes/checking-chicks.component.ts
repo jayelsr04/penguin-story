@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `markAsTouched(addressGroup);
 markAsTouched(addressGroup.street);
@@ -20,7 +21,7 @@ markAsTouched(addressGroup, {
 @Component({
   selector: 'app-checking-chicks',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="Checking on the Chicks"
@@ -34,6 +35,7 @@ markAsTouched(addressGroup, {
       (jump)="jump.emit($event)"
     >
       <div old class="nest-scene">
+        <span class="pip pip-md"><app-penguin mood="busy" /></span>
         <div class="nest-label">Tap each chick, one at a time</div>
         <div class="nest">
           @for (c of chicks; track c; let i = $index) {
@@ -49,6 +51,7 @@ markAsTouched(addressGroup, {
       </div>
 
       <div new class="nest-scene">
+        <span class="pip pip-md"><app-penguin [mood]="newChecked() ? 'proud' : 'happy'" /></span>
         <div class="nest-label">Tap the whole nest at once</div>
         <button type="button" class="nest tile-btn" (click)="toggleNew()">
           @for (c of chicks; track c) {

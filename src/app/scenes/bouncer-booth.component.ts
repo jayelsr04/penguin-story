@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `validate(f.startDate, ({ value }) => {
   const min = new Date('2026-01-01');
@@ -35,7 +36,7 @@ const CASES: DateCase[] = [
 @Component({
   selector: 'app-bouncer-booth',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Bouncer Booth"
@@ -49,7 +50,7 @@ const CASES: DateCase[] = [
       (jump)="jump.emit($event)"
     >
       <div old class="booth-scene">
-        <div class="bouncer">🐧</div>
+        <div class="bouncer"><span class="pip pip-md"><app-penguin mood="confused" /></span></div>
         <div class="dates">
           @for (d of cases; track d.key) {
             <button type="button" class="tile-btn date-btn" (click)="testOld(d.key)">
@@ -64,7 +65,7 @@ const CASES: DateCase[] = [
       </div>
 
       <div new class="booth-scene">
-        <div class="bouncer">🐧</div>
+        <div class="bouncer"><span class="pip pip-md"><app-penguin [mood]="engaged() ? 'proud' : 'happy'" /></span></div>
         <div class="dates">
           @for (d of cases; track d.key) {
             <button type="button" class="tile-btn date-btn" (click)="testNew(d.key)">
@@ -89,7 +90,7 @@ const CASES: DateCase[] = [
       gap: 12px;
       width: 100%;
     }
-    .bouncer { font-size: 30px; }
+    .bouncer { display: flex; justify-content: center; }
     .dates {
       display: flex;
       flex-direction: column;

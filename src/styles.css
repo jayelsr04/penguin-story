@@ -8,18 +8,27 @@
   --surface-accent: #FCEEF0;
   --ink: #12151B;
   --ink-muted: #5C6470;
-  --ink-faint: #8991A0;
+  --ink-faint: #69707B;
   --border: #DFE2E7;
   --accent: #C3002F;
   --accent-ink: #FFFFFF;
   --code-bg: #14171D;
   --code-ink: #D9DEE6;
-  --code-muted: #6E7887;
+  --code-muted: #778292;
   --code-accent: #FF6B78;
   --radius: 6px;
   --radius-sm: 3px;
   --mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  /* Iceberg scene / ambient backdrop (light default) */
+  --scene-glow: rgba(120,175,225,0.28);
+  --scene-glow-warm: rgba(255,150,120,0.05);
+  --scene-floor: rgba(150,185,225,0.22);
+  --scene-vignette: rgba(90,120,160,0.12);
+  --scene-star: rgba(255,255,255,0);
+  --ice: #bcd6ef;
+  --ice-2: #a9c8e6;
+  --ice-lit: #dcecfb;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,27 +39,42 @@
     --surface-accent: #241619;
     --ink: #ECEEF1;
     --ink-muted: #9AA1AC;
-    --ink-faint: #626A76;
+    --ink-faint: #788190;
     --border: #262B34;
     --accent: #FF4B5C;
     --accent-ink: #14171D;
     --code-bg: #0A0C10;
     --code-ink: #D9DEE6;
-    --code-muted: #5C6572;
+    --code-muted: #707B8B;
     --code-accent: #FF8891;
+    /* Iceberg scene / ambient backdrop (dark) */
+    --scene-glow: rgba(90,150,220,0.05);
+    --scene-glow-warm: rgba(255,120,90,0.04);
+    --scene-floor: rgba(46,86,128,0.11);
+    --scene-vignette: rgba(0,0,0,0.42);
+    --scene-star: rgba(210,224,245,0.9);
+    --ice: #1b3350;
+    --ice-2: #24405f;
+    --ice-lit: #33587f;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0C0E12; --surface: #15181F; --surface-2: #1D2128; --surface-accent: #241619;
-  --ink: #ECEEF1; --ink-muted: #9AA1AC; --ink-faint: #626A76; --border: #262B34;
+  --ink: #ECEEF1; --ink-muted: #9AA1AC; --ink-faint: #788190; --border: #262B34;
   --accent: #FF4B5C; --accent-ink: #14171D; --code-bg: #0A0C10; --code-ink: #D9DEE6;
-  --code-muted: #5C6572; --code-accent: #FF8891;
+  --code-muted: #707B8B; --code-accent: #FF8891;
+  --scene-glow: rgba(90,150,220,0.05); --scene-glow-warm: rgba(255,120,90,0.04);
+  --scene-floor: rgba(46,86,128,0.11); --scene-vignette: rgba(0,0,0,0.42);
+  --scene-star: rgba(210,224,245,0.9); --ice: #1b3350; --ice-2: #24405f; --ice-lit: #33587f;
 }
 :root[data-theme="light"] {
   --bg: #F4F5F7; --surface: #FFFFFF; --surface-2: #EAECEF; --surface-accent: #FCEEF0;
-  --ink: #12151B; --ink-muted: #5C6470; --ink-faint: #8991A0; --border: #DFE2E7;
+  --ink: #12151B; --ink-muted: #5C6470; --ink-faint: #69707B; --border: #DFE2E7;
   --accent: #C3002F; --accent-ink: #FFFFFF; --code-bg: #14171D; --code-ink: #D9DEE6;
-  --code-muted: #6E7887; --code-accent: #FF6B78;
+  --code-muted: #778292; --code-accent: #FF6B78;
+  --scene-glow: rgba(120,175,225,0.28); --scene-glow-warm: rgba(255,150,120,0.05);
+  --scene-floor: rgba(150,185,225,0.22); --scene-vignette: rgba(90,120,160,0.12);
+  --scene-star: rgba(255,255,255,0); --ice: #bcd6ef; --ice-2: #a9c8e6; --ice-lit: #dcecfb;
 }
 
 body {
@@ -158,3 +182,11 @@ button:focus-visible, a:focus-visible {
 }
 .tile-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--ink-faint); }
 .tile-btn:disabled { cursor: not-allowed; opacity: 0.35; }
+
+/* Pip the penguin mascot — shared sizing wrappers (SVG scales to fill) */
+.pip { display: inline-flex; align-items: flex-end; justify-content: center; line-height: 0; flex-shrink: 0; }
+.pip app-penguin { display: block; width: 100%; height: 100%; }
+.pip-xs { width: 24px; height: 28px; }
+.pip-sm { width: 34px; height: 40px; }
+.pip-md { width: 54px; height: 63px; }
+.pip-lg { width: 108px; height: 126px; }

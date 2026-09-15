@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `debounce(f.username, 500);
 
@@ -27,7 +28,7 @@ type TriState = 'idle' | 'checking' | 'done';
 @Component({
   selector: 'app-waiting-game',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Fish Counter Line"
@@ -41,6 +42,7 @@ type TriState = 'idle' | 'checking' | 'done';
       (jump)="jump.emit($event)"
     >
       <div old class="counter-scene">
+        <span class="pip pip-md counter-pip"><app-penguin [mood]="oldState() === 'checking' ? 'busy' : 'confused'" /></span>
         <div class="question">
           <span>Is your name spelled right?</span>
           <span class="status" [class.stuck]="oldState() !== 'idle'">
@@ -59,6 +61,7 @@ type TriState = 'idle' | 'checking' | 'done';
       </div>
 
       <div new class="counter-scene">
+        <span class="pip pip-md counter-pip"><app-penguin [mood]="newFishState() === 'checking' ? 'busy' : (engaged() ? 'proud' : 'happy')" /></span>
         <div class="question">
           <span>Is your name spelled right?</span>
           <span class="status" [class.instant]="newNameDone()">{{ newNameDone() ? 'yes ✓' : '—' }}</span>
@@ -82,6 +85,7 @@ type TriState = 'idle' | 'checking' | 'done';
       gap: 12px;
       width: 100%;
     }
+    .counter-pip { align-self: center; }
     .question {
       display: flex;
       justify-content: space-between;

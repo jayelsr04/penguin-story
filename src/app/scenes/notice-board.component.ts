@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `@Component({
   selector: 'app-custom-input',
@@ -25,7 +26,7 @@ class CustomInput {
 @Component({
   selector: 'app-notice-board',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Iceberg Notice Board"
@@ -49,7 +50,9 @@ class CustomInput {
         </div>
         <div class="crowd">
           @for (p of [1,2,3]; track p) {
-            <button type="button" class="tile-btn penguin-btn" (click)="toggleOld()">🐧</button>
+            <button type="button" class="tile-btn penguin-btn" (click)="toggleOld()">
+              <span class="pip pip-sm"><app-penguin [mood]="oldMessed() ? 'busy' : 'happy'" /></span>
+            </button>
           }
         </div>
         <div class="stat">{{ oldMessed() ? 'Board overwritten' : 'Click a penguin to edit it' }}</div>
@@ -61,7 +64,9 @@ class CustomInput {
         </div>
         <div class="crowd">
           @for (p of [1,2,3]; track p) {
-            <button type="button" class="tile-btn penguin-btn" (click)="askNew()">🐧</button>
+            <button type="button" class="tile-btn penguin-btn" (click)="askNew()">
+              <span class="pip pip-sm"><app-penguin [mood]="asked() ? 'happy' : 'walking'" /></span>
+            </button>
           }
         </div>
         <div class="stat" [class.win]="asked()">{{ asked() ? 'Request sent — only Pip can edit' : 'Click a penguin to try' }}</div>
@@ -109,11 +114,12 @@ class CustomInput {
     }
     .crowd { display: flex; gap: 14px; }
     .penguin-btn {
-      font-size: 24px;
-      width: 44px;
-      height: 44px;
-      line-height: 1;
-      padding: 0;
+      width: 48px;
+      height: 52px;
+      padding: 4px 0 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
     }
   `],
 })

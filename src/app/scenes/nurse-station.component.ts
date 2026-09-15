@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `const errors = f.email().errors();
 const requiredError =
@@ -21,7 +22,7 @@ if (requiredError) {
 @Component({
   selector: 'app-nurse-station',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Nurse's Station"
@@ -35,6 +36,7 @@ if (requiredError) {
       (jump)="jump.emit($event)"
     >
       <div old class="chart-scene">
+        <span class="pip pip-md"><app-penguin [mood]="scanning() ? 'busy' : 'confused'" /></span>
         <div class="clipboard">
           @for (s of symptoms; track s; let i = $index) {
             <div class="symptom" [class.scanned]="scanIndex() > i" [class.found]="s === 'required' && scanIndex() > i">
@@ -49,6 +51,7 @@ if (requiredError) {
       </div>
 
       <div new class="chart-scene">
+        <span class="pip pip-md"><app-penguin [mood]="newFound() ? 'proud' : 'happy'" /></span>
         <div class="clipboard">
           @for (s of symptoms; track s) {
             <div class="symptom" [class.found]="s === 'required' && newFound()">{{ s }}</div>

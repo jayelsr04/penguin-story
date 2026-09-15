@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `<input [formControlName]="'email'">
 <!-- only works with
@@ -28,7 +29,7 @@ resetForm() {
 @Component({
   selector: 'app-adapter-desk',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Universal Adapter Desk"
@@ -42,6 +43,7 @@ resetForm() {
       (jump)="jump.emit($event)"
     >
       <div old class="desk-scene">
+        <span class="pip pip-md"><app-penguin mood="confused" /></span>
         <div class="sockets">
           @for (s of sockets; track s.name; let i = $index) {
             <div class="socket">
@@ -54,6 +56,7 @@ resetForm() {
       </div>
 
       <div new class="desk-scene">
+        <span class="pip pip-md"><app-penguin [mood]="newLit() ? 'proud' : 'happy'" /></span>
         <button type="button" class="tile-btn adapter" [class.settle]="newLit()" (click)="plugAdapter()">🔌</button>
         <div class="sockets">
           @for (s of sockets; track s.name) {

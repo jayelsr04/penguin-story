@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `debounce(f.username, 300);
 // waits 300ms after each
@@ -17,7 +18,7 @@ debounce(f.username, 300, 'blur');
 @Component({
   selector: 'app-doorbell',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Doorbell"
@@ -31,6 +32,7 @@ debounce(f.username, 300, 'blur');
       (jump)="jump.emit($event)"
     >
       <div old class="door-scene">
+        <span class="pip pip-md"><app-penguin [mood]="oldRinging() ? 'happy' : 'walking'" /></span>
         <div class="door">🚪<span class="bell" [class.ring]="oldRinging()">🔔</span></div>
         <div class="btn-row">
           <button type="button" class="tile-btn action-btn" (click)="pressOld()">Press</button>
@@ -40,6 +42,7 @@ debounce(f.username, 300, 'blur');
       </div>
 
       <div new class="door-scene">
+        <span class="pip pip-md"><app-penguin [mood]="newRinging() ? 'proud' : 'walking'" /></span>
         <div class="door">🚪<span class="bell" [class.ring]="newRinging()">🔔</span></div>
         <div class="btn-row">
           <button type="button" class="tile-btn action-btn" (click)="triggerNew()">Press</button>

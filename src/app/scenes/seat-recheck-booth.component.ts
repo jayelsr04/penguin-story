@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { PenguinComponent } from '../penguin/penguin.component';
 
 const OLD_CODE = `this.usernameControl
   .updateValueAndValidity();
@@ -19,7 +20,7 @@ onTeamRosterChanged() {
 @Component({
   selector: 'app-seat-recheck-booth',
   standalone: true,
-  imports: [RoomShellComponent],
+  imports: [RoomShellComponent, PenguinComponent],
   template: `
     <app-room-shell
       title="The Seat Re-Check Booth"
@@ -33,6 +34,7 @@ onTeamRosterChanged() {
       (jump)="jump.emit($event)"
     >
       <div old class="theater-scene">
+        <span class="pip pip-md"><app-penguin mood="confused" /></span>
         <div class="row">
           <div class="seat filled"></div>
           <div class="seat filled"></div>
@@ -50,6 +52,7 @@ onTeamRosterChanged() {
       </div>
 
       <div new class="theater-scene">
+        <span class="pip pip-md"><app-penguin [mood]="newFormUpdated() ? 'proud' : (newBooked() ? 'busy' : 'happy')" /></span>
         <div class="row">
           <div class="seat filled"></div>
           <div class="seat filled"></div>
