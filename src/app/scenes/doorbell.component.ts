@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
-import { PenguinComponent } from '../penguin/penguin.component';
+import { PenguinComponent, PenguinMood } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = 'debounce can now wait for blur, not just typing.';
 
 const OLD_CODE = `debounce(f.username, 300);
 // waits 300ms after each
@@ -18,7 +21,7 @@ debounce(f.username, 300, 'blur');
 @Component({
   selector: 'app-doorbell',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="The Doorbell"
@@ -32,23 +35,25 @@ debounce(f.username, 300, 'blur');
       (jump)="jump.emit($event)"
     >
       <div old class="door-scene">
-        <span class="pip pip-md"><app-penguin [mood]="oldRinging() ? 'happy' : 'walking'" /></span>
+        <span class="pip pip-md"><app-penguin [mood]="oldPending() ? 'busy' : oldRinging() ? 'happy' : 'walking'" /></span>
         <div class="door">🚪<span class="bell" [class.ring]="oldRinging()">🔔</span></div>
         <div class="btn-row">
-          <button type="button" class="tile-btn action-btn" (click)="pressOld()">Press</button>
+          <button type="button" class="tile-btn action-btn" [disabled]="oldPending() || oldRinging()" (click)="pressOld()">Press</button>
           <button type="button" class="tile-btn action-btn" disabled title="Not a wait mode in the old version">Walk away</button>
         </div>
-        <div class="stat">{{ oldRinging() ? 'rang — click Press to reset' : 'click Press' }}</div>
+        <div class="stat">{{ oldPending() ? 'waiting…' : oldRinging() ? 'rang' : 'click Press' }}</div>
+        <app-reset-button [disabled]="!oldRinging()" (reset)="resetOld()" />
       </div>
 
       <div new class="door-scene">
-        <span class="pip pip-md"><app-penguin [mood]="newRinging() ? 'proud' : 'walking'" /></span>
+        <span class="pip pip-md"><app-penguin [mood]="newMood()" /></span>
         <div class="door">🚪<span class="bell" [class.ring]="newRinging()">🔔</span></div>
         <div class="btn-row">
-          <button type="button" class="tile-btn action-btn" (click)="triggerNew()">Press</button>
-          <button type="button" class="tile-btn action-btn" (click)="triggerNew()">Walk away</button>
+          <button type="button" class="tile-btn action-btn" [disabled]="newBusy()" (click)="pressNew()">Press</button>
+          <button type="button" class="tile-btn action-btn" [disabled]="newBusy()" (click)="walkAwayNew()">Walk away</button>
         </div>
-        <div class="stat" [class.win]="newRinging()">{{ newRinging() ? 'rang — click either to reset' : 'click either button' }}</div>
+        <div class="stat" [class.win]="newRinging()">{{ newStatus() }}</div>
+        <app-reset-button [disabled]="!newRinging()" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -96,23 +101,63 @@ export class DoorbellComponent {
   newCode = NEW_CODE;
 
   oldRinging = signal(false);
+  oldPending = signal(false);
   newRinging = signal(false);
+  newPending = signal<'idle' | 'press' | 'walk'>('idle');
   engaged = signal(false);
 
   pressOld() {
-    if (this.oldRinging()) {
-      this.oldRinging.set(false);
-      return;
-    }
-    setTimeout(() => this.oldRinging.set(true), 400);
+    if (this.oldPending() || this.oldRinging()) return;
+    this.oldPending.set(true);
+    setTimeout(() => {
+      this.oldPending.set(false);
+      this.oldRinging.set(true);
+    }, 400);
   }
 
-  triggerNew() {
+  resetOld() {
+    this.oldRinging.set(false);
+    this.oldPending.set(false);
+  }
+
+  pressNew() {
+    if (this.newPending() !== 'idle' || this.newRinging()) return;
     this.engaged.set(true);
-    if (this.newRinging()) {
-      this.newRinging.set(false);
-      return;
-    }
-    setTimeout(() => this.newRinging.set(true), 400);
+    this.newPending.set('press');
+    setTimeout(() => {
+      this.newPending.set('idle');
+      this.newRinging.set(true);
+    }, 400);
+  }
+
+  walkAwayNew() {
+    if (this.newPending() !== 'idle' || this.newRinging()) return;
+    this.engaged.set(true);
+    this.newPending.set('walk');
+    setTimeout(() => {
+      this.newPending.set('idle');
+      this.newRinging.set(true);
+    }, 400);
+  }
+
+  resetNew() {
+    this.newRinging.set(false);
+    this.newPending.set('idle');
+  }
+
+  newMood(): PenguinMood {
+    if (this.newPending() === 'walk') return 'walking';
+    if (this.newPending() === 'press') return 'busy';
+    return this.newRinging() ? 'proud' : 'happy';
+  }
+
+  newBusy() {
+    return this.newPending() !== 'idle' || this.newRinging();
+  }
+
+  newStatus() {
+    if (this.newPending() === 'press') return 'pressing…';
+    if (this.newPending() === 'walk') return 'walking away…';
+    return this.newRinging() ? 'rang' : 'click either button';
   }
 }

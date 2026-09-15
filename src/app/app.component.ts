@@ -10,29 +10,52 @@ import { NurseStationComponent } from './scenes/nurse-station.component';
 import { TranslatorBoothComponent } from './scenes/translator-booth.component';
 import { AdapterDeskComponent } from './scenes/adapter-desk.component';
 import { PenguinComponent } from './penguin/penguin.component';
+import { HALLWAY_STOPS, WING_NAMES } from './shared/room-shell.component';
+
+import { RECAP_LINE as NOTICE_BOARD_RECAP } from './scenes/notice-board.component';
+import { RECAP_LINE as CHECKING_CHICKS_RECAP } from './scenes/checking-chicks.component';
+import { RECAP_LINE as UNIVERSAL_TICKET_RECAP } from './scenes/universal-ticket.component';
+import { RECAP_LINE as BOUNCER_BOOTH_RECAP } from './scenes/bouncer-booth.component';
+import { RECAP_LINE as DOORBELL_RECAP } from './scenes/doorbell.component';
+import { RECAP_LINE as WAITING_GAME_RECAP } from './scenes/waiting-game.component';
+import { RECAP_LINE as SEAT_RECHECK_RECAP } from './scenes/seat-recheck-booth.component';
+import { RECAP_LINE as NURSE_STATION_RECAP } from './scenes/nurse-station.component';
+import { RECAP_LINE as TRANSLATOR_BOOTH_RECAP } from './scenes/translator-booth.component';
+import { RECAP_LINE as ADAPTER_DESK_RECAP } from './scenes/adapter-desk.component';
 
 type Screen = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 'outro';
 
-const RECAP = [
-  { wing: 'Front Office', items: [
-    'Only Pip updates the notice board — everyone else just asks (touch input/output).',
-    'One tap checks a whole nest of chicks — markAsTouched() cascades now.',
-  ]},
-  { wing: 'Rules & Conditions', items: [
-    'Every booth uses the same "when" rule shape now.',
-    'minDate()/maxDate() do the date math for you.',
-  ]},
-  { wing: 'Waiting Room', items: [
-    'debounce can now wait for blur, not just typing.',
-    'Only the slow async check waits — instant checks don’t.',
-  ]},
-  { wing: 'Back Office', items: [
-    'reloadValidation() forces a fresh check on demand.',
-    'getError(kind) looks up one error directly.',
-    'Legacy CVA validators are now seen automatically.',
-    'One component adapts to Reactive, template, and Signal forms — plus reset().',
-  ]},
+// One recap line per room, in stop order (1..10) — each line lives in its
+// own room's file next to that room's title/code, so changing a room's
+// concept can't silently drift out of sync with the outro recap.
+const ROOM_RECAPS = [
+  NOTICE_BOARD_RECAP,
+  CHECKING_CHICKS_RECAP,
+  UNIVERSAL_TICKET_RECAP,
+  BOUNCER_BOOTH_RECAP,
+  DOORBELL_RECAP,
+  WAITING_GAME_RECAP,
+  SEAT_RECHECK_RECAP,
+  NURSE_STATION_RECAP,
+  TRANSLATOR_BOOTH_RECAP,
+  ADAPTER_DESK_RECAP,
 ];
+
+function buildRecap() {
+  const wings: { wing: string; items: string[] }[] = [];
+  HALLWAY_STOPS.forEach((stop, i) => {
+    const wingName = WING_NAMES[stop.wing];
+    let group = wings.find((w) => w.wing === wingName);
+    if (!group) {
+      group = { wing: wingName, items: [] };
+      wings.push(group);
+    }
+    group.items.push(ROOM_RECAPS[i]);
+  });
+  return wings;
+}
+
+const RECAP = buildRecap();
 
 @Component({
   selector: 'app-root',

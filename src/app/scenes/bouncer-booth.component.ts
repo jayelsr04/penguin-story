@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = 'minDate()/maxDate() do the date math for you.';
 
 const OLD_CODE = `validate(f.startDate, ({ value }) => {
   const min = new Date('2026-01-01');
@@ -25,18 +28,25 @@ type Verdict = 'ok' | 'tooEarly' | 'tooLate' | null;
 interface DateCase {
   key: 'early' | 'valid' | 'future';
   label: string;
+  date: Date;
 }
 
+// Same bounds shown in the printed code samples above — the verdicts below
+// are computed against these, not hardcoded per case, so editing a case's
+// date can never silently contradict the code shown next to it.
+const MIN_DATE = new Date('2026-01-01');
+const MAX_DATE = new Date('2026-12-31');
+
 const CASES: DateCase[] = [
-  { key: 'early', label: 'Jun 2025' },
-  { key: 'valid', label: 'Jun 2026' },
-  { key: 'future', label: 'Jan 2099' },
+  { key: 'early', label: 'Jun 2025', date: new Date('2025-06-01') },
+  { key: 'valid', label: 'Jun 2026', date: new Date('2026-06-01') },
+  { key: 'future', label: 'Jan 2099', date: new Date('2099-01-01') },
 ];
 
 @Component({
   selector: 'app-bouncer-booth',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="The Bouncer Booth"
@@ -62,6 +72,7 @@ const CASES: DateCase[] = [
           }
         </div>
         <div class="stat">{{ oldAccepted() }} / 3 accepted</div>
+        <app-reset-button [disabled]="oldTestedCount() === 0" (reset)="resetOld()" />
       </div>
 
       <div new class="booth-scene">
@@ -79,6 +90,7 @@ const CASES: DateCase[] = [
           }
         </div>
         <div class="stat" [class.win]="newAccepted() === 1">{{ newAccepted() }} / 3 accepted</div>
+        <app-reset-button [disabled]="newTestedCount() === 0" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -139,26 +151,44 @@ export class BouncerBoothComponent {
     return Object.values(this.newResults()).filter((v) => v === 'ok').length;
   }
 
+  oldTestedCount() {
+    return Object.values(this.oldResults()).filter((v) => v !== null).length;
+  }
+
+  newTestedCount() {
+    return Object.values(this.newResults()).filter((v) => v !== null).length;
+  }
+
+  // The old validator only ever checks the lower bound — it has no
+  // upper-bound branch at all, so a wildly future date sails through.
+  private verdictOld(date: Date): Verdict {
+    return date < MIN_DATE ? 'tooEarly' : 'ok';
+  }
+
+  private verdictNew(date: Date): Verdict {
+    if (date < MIN_DATE) return 'tooEarly';
+    if (date > MAX_DATE) return 'tooLate';
+    return 'ok';
+  }
+
   testOld(key: DateCase['key']) {
-    const r = this.oldResults();
-    if (Object.values(r).every((v) => v !== null)) {
-      this.oldResults.set({ early: null, valid: null, future: null });
-      return;
-    }
-    // The old validator only ever checks the lower bound — it has no
-    // upper-bound branch at all, so a wildly future date sails through.
-    const verdict: Verdict = key === 'early' ? 'tooEarly' : 'ok';
-    this.oldResults.update((cur) => ({ ...cur, [key]: verdict }));
+    if (this.oldResults()[key] !== null) return;
+    const found = CASES.find((c) => c.key === key)!;
+    this.oldResults.update((cur) => ({ ...cur, [key]: this.verdictOld(found.date) }));
+  }
+
+  resetOld() {
+    this.oldResults.set({ early: null, valid: null, future: null });
   }
 
   testNew(key: DateCase['key']) {
+    if (this.newResults()[key] !== null) return;
     this.engaged.set(true);
-    const r = this.newResults();
-    if (Object.values(r).every((v) => v !== null)) {
-      this.newResults.set({ early: null, valid: null, future: null });
-      return;
-    }
-    const verdict: Verdict = key === 'early' ? 'tooEarly' : key === 'future' ? 'tooLate' : 'ok';
-    this.newResults.update((cur) => ({ ...cur, [key]: verdict }));
+    const found = CASES.find((c) => c.key === key)!;
+    this.newResults.update((cur) => ({ ...cur, [key]: this.verdictNew(found.date) }));
+  }
+
+  resetNew() {
+    this.newResults.set({ early: null, valid: null, future: null });
   }
 }

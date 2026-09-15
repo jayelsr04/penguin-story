@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+
+export const RECAP_LINE = "Only the slow async check waits — instant checks don't.";
 
 const OLD_CODE = `debounce(f.username, 500);
 
@@ -28,7 +31,7 @@ type TriState = 'idle' | 'checking' | 'done';
 @Component({
   selector: 'app-waiting-game',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="The Fish Counter Line"
@@ -55,9 +58,8 @@ type TriState = 'idle' | 'checking' | 'done';
             {{ oldState() === 'idle' ? '—' : oldState() === 'checking' ? 'waiting…' : 'yes ✓' }}
           </span>
         </div>
-        <button type="button" class="tile-btn action-btn" (click)="askOld()">
-          {{ oldState() === 'done' ? 'Reset' : 'Ask both' }}
-        </button>
+        <button type="button" class="tile-btn action-btn" [disabled]="oldState() !== 'idle'" (click)="askOld()">Ask both</button>
+        <app-reset-button [disabled]="oldState() === 'idle'" (reset)="resetOld()" />
       </div>
 
       <div new class="counter-scene">
@@ -72,9 +74,8 @@ type TriState = 'idle' | 'checking' | 'done';
             {{ newFishState() === 'idle' ? '—' : newFishState() === 'checking' ? 'checking…' : 'yes ✓' }}
           </span>
         </div>
-        <button type="button" class="tile-btn action-btn" (click)="askNew()">
-          {{ newFishState() === 'done' ? 'Reset' : 'Ask both' }}
-        </button>
+        <button type="button" class="tile-btn action-btn" [disabled]="newFishState() !== 'idle'" (click)="askNew()">Ask both</button>
+        <app-reset-button [disabled]="newFishState() === 'idle'" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -137,23 +138,25 @@ export class WaitingGameComponent {
   engaged = signal(false);
 
   askOld() {
-    if (this.oldState() === 'idle') {
-      this.oldState.set('checking');
-      setTimeout(() => this.oldState.set('done'), 900);
-    } else if (this.oldState() === 'done') {
-      this.oldState.set('idle');
-    }
+    if (this.oldState() !== 'idle') return;
+    this.oldState.set('checking');
+    setTimeout(() => this.oldState.set('done'), 900);
+  }
+
+  resetOld() {
+    this.oldState.set('idle');
   }
 
   askNew() {
+    if (this.newFishState() !== 'idle') return;
     this.engaged.set(true);
-    if (this.newFishState() === 'idle') {
-      this.newNameDone.set(true);
-      this.newFishState.set('checking');
-      setTimeout(() => this.newFishState.set('done'), 900);
-    } else if (this.newFishState() === 'done') {
-      this.newNameDone.set(false);
-      this.newFishState.set('idle');
-    }
+    this.newNameDone.set(true);
+    this.newFishState.set('checking');
+    setTimeout(() => this.newFishState.set('done'), 900);
+  }
+
+  resetNew() {
+    this.newNameDone.set(false);
+    this.newFishState.set('idle');
   }
 }

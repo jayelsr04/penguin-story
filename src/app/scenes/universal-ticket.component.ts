@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = 'Every booth uses the same "when" rule shape now.';
 
 const OLD_CODE = `disabled(f.shippingAddress,
   () => f.sameAsBilling().value());
@@ -31,7 +34,7 @@ readonly(f.accountId, {
 @Component({
   selector: 'app-universal-ticket',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="Four Booths, One Rule"
@@ -57,6 +60,7 @@ readonly(f.accountId, {
         }
         <div class="stat">{{ oldRevealedCount() }} / 4 shapes learned</div>
         </div>
+        <app-reset-button [disabled]="oldRevealedCount() === 0" (reset)="resetOld()" />
       </div>
 
       <div new class="ticket-scene">
@@ -72,6 +76,7 @@ readonly(f.accountId, {
         }
         <div class="stat" [class.win]="newRevealed()">{{ newRevealed() ? '1 click — all 4 done' : 'Click any booth' }}</div>
         </div>
+        <app-reset-button [disabled]="!newRevealed()" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -154,19 +159,23 @@ export class UniversalTicketComponent {
 
   revealOld(i: number) {
     const arr = this.oldRevealed();
-    if (arr.every(Boolean)) {
-      this.oldRevealed.set([false, false, false, false]);
-      return;
-    }
-    if (!arr[i]) {
-      const next = [...arr];
-      next[i] = true;
-      this.oldRevealed.set(next);
-    }
+    if (arr[i]) return;
+    const next = [...arr];
+    next[i] = true;
+    this.oldRevealed.set(next);
+  }
+
+  resetOld() {
+    this.oldRevealed.set([false, false, false, false]);
   }
 
   toggleNew() {
+    if (this.newRevealed()) return;
     this.engaged.set(true);
-    this.newRevealed.update((v) => !v);
+    this.newRevealed.set(true);
+  }
+
+  resetNew() {
+    this.newRevealed.set(false);
   }
 }

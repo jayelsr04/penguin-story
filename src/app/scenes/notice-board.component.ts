@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = "Only Pip updates the notice board — everyone else just asks (touch input/output).";
 
 const OLD_CODE = `@Component({
   selector: 'app-custom-input',
@@ -26,7 +29,7 @@ class CustomInput {
 @Component({
   selector: 'app-notice-board',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="The Iceberg Notice Board"
@@ -56,6 +59,7 @@ class CustomInput {
           }
         </div>
         <div class="stat">{{ oldMessed() ? 'Board overwritten' : 'Click a penguin to edit it' }}</div>
+        <app-reset-button [disabled]="!oldMessed()" (reset)="resetOld()" />
       </div>
 
       <div new class="board-scene">
@@ -70,6 +74,7 @@ class CustomInput {
           }
         </div>
         <div class="stat" [class.win]="asked()">{{ asked() ? 'Request sent — only Pip can edit' : 'Click a penguin to try' }}</div>
+        <app-reset-button [disabled]="!asked()" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -134,16 +139,23 @@ export class NoticeBoardComponent {
   oldMessed = signal(false);
   asked = signal(false);
   engaged = signal(false);
-  private askTimer?: ReturnType<typeof setTimeout>;
 
   toggleOld() {
-    this.oldMessed.update((v) => !v);
+    if (this.oldMessed()) return;
+    this.oldMessed.set(true);
+  }
+
+  resetOld() {
+    this.oldMessed.set(false);
   }
 
   askNew() {
+    if (this.asked()) return;
     this.engaged.set(true);
     this.asked.set(true);
-    clearTimeout(this.askTimer);
-    this.askTimer = setTimeout(() => this.asked.set(false), 1200);
+  }
+
+  resetNew() {
+    this.asked.set(false);
   }
 }

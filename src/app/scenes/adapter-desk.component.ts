@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = 'One component adapts to Reactive, template, and Signal forms — plus reset().';
 
 const OLD_CODE = `<input [formControlName]="'email'">
 <!-- only works with
@@ -29,7 +32,7 @@ resetForm() {
 @Component({
   selector: 'app-adapter-desk',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="The Universal Adapter Desk"
@@ -53,11 +56,12 @@ resetForm() {
           }
         </div>
         <div class="stat">{{ oldLitCount() }} / 3 plugged in</div>
+        <app-reset-button [disabled]="oldLitCount() === 0" (reset)="resetOld()" />
       </div>
 
       <div new class="desk-scene">
         <span class="pip pip-md"><app-penguin [mood]="newLit() ? 'proud' : 'happy'" /></span>
-        <button type="button" class="tile-btn adapter" [class.settle]="newLit()" (click)="plugAdapter()">🔌</button>
+        <button type="button" class="tile-btn adapter" [class.settle]="newLit()" [disabled]="newLit()" (click)="plugAdapter()">🔌</button>
         <div class="sockets">
           @for (s of sockets; track s.name) {
             <div class="socket">
@@ -66,8 +70,8 @@ resetForm() {
             </div>
           }
         </div>
-        <button type="button" class="tile-btn lever" [class.pulled]="newLit()" (click)="resetLever()">RESET</button>
-        <div class="stat" [class.win]="newLit()">{{ newLit() ? 'all 3 fit — click Reset' : 'click the adapter' }}</div>
+        <div class="stat" [class.win]="newLit()">{{ newLit() ? 'all 3 fit' : 'click the adapter' }}</div>
+        <app-reset-button [disabled]="!newLit()" (reset)="resetLever()" />
       </div>
     </app-room-shell>
   `,
@@ -109,16 +113,6 @@ resetForm() {
       transition: transform 0.3s ease;
     }
     .adapter.settle { transform: scale(1.12) rotate(-8deg); }
-    .lever {
-      margin-top: 6px;
-      font-family: var(--mono);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--ink);
-      padding: 4px 12px;
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-    .lever.pulled { border-color: var(--accent); color: var(--accent); }
   `],
 })
 export class AdapterDeskComponent {
@@ -145,24 +139,23 @@ export class AdapterDeskComponent {
 
   clickSocket(i: number) {
     const arr = this.oldLit();
-    if (arr.every(Boolean)) {
-      this.oldLit.set([false, false, false]);
-      return;
-    }
-    if (!arr[i]) {
-      const next = [...arr];
-      next[i] = true;
-      this.oldLit.set(next);
-    }
+    if (arr[i]) return;
+    const next = [...arr];
+    next[i] = true;
+    this.oldLit.set(next);
+  }
+
+  resetOld() {
+    this.oldLit.set([false, false, false]);
   }
 
   plugAdapter() {
+    if (this.newLit()) return;
     this.engaged.set(true);
     this.newLit.set(true);
   }
 
   resetLever() {
-    this.engaged.set(true);
     this.newLit.set(false);
   }
 }

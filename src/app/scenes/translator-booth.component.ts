@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = 'Legacy CVA validators are now seen automatically.';
 
 const OLD_CODE = `// LegacyPhoneValidator itself
 // doesn't change at all
@@ -21,7 +24,7 @@ type SendState = 'idle' | 'sending' | 'done';
 @Component({
   selector: 'app-translator-booth',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="The Translator Booth"
@@ -41,10 +44,9 @@ type SendState = 'idle' | 'sending' | 'done';
           <div class="dropped" [class.show]="oldState() === 'done'">lost</div>
         </div>
         <div class="dept"><span class="pip pip-sm"><app-penguin mood="confused" /></span><div class="dept-name">Signal Forms</div></div>
-        <button type="button" class="tile-btn action-btn" (click)="sendOld()">
-          {{ oldState() === 'done' ? 'Reset' : 'Send report' }}
-        </button>
+        <button type="button" class="tile-btn action-btn" [disabled]="oldState() !== 'idle'" (click)="sendOld()">Send report</button>
         <div class="stat">{{ oldState() === 'idle' ? 'click to send' : oldState() === 'sending' ? 'sending…' : 'lost — ignored' }}</div>
+        <app-reset-button [disabled]="oldState() === 'idle'" (reset)="resetOld()" />
       </div>
 
       <div new class="depts">
@@ -56,12 +58,11 @@ type SendState = 'idle' | 'sending' | 'done';
           <div class="paper" [class.carried]="newState() === 'sending'">📄</div>
         </div>
         <div class="dept"><span class="pip pip-sm"><app-penguin mood="happy" /></span><div class="dept-name">Signal Forms</div></div>
-        <button type="button" class="tile-btn action-btn" (click)="sendNew()">
-          {{ newState() === 'done' ? 'Reset' : 'Send report' }}
-        </button>
+        <button type="button" class="tile-btn action-btn" [disabled]="newState() !== 'idle'" (click)="sendNew()">Send report</button>
         <div class="stat" [class.win]="newState() === 'done'">
           {{ newState() === 'idle' ? 'click to send' : newState() === 'sending' ? 'carrying…' : 'delivered ✓' }}
         </div>
+        <app-reset-button [disabled]="newState() === 'idle'" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -152,21 +153,23 @@ export class TranslatorBoothComponent {
   engaged = signal(false);
 
   sendOld() {
-    if (this.oldState() === 'idle') {
-      this.oldState.set('sending');
-      setTimeout(() => this.oldState.set('done'), 600);
-    } else if (this.oldState() === 'done') {
-      this.oldState.set('idle');
-    }
+    if (this.oldState() !== 'idle') return;
+    this.oldState.set('sending');
+    setTimeout(() => this.oldState.set('done'), 600);
+  }
+
+  resetOld() {
+    this.oldState.set('idle');
   }
 
   sendNew() {
+    if (this.newState() !== 'idle') return;
     this.engaged.set(true);
-    if (this.newState() === 'idle') {
-      this.newState.set('sending');
-      setTimeout(() => this.newState.set('done'), 600);
-    } else if (this.newState() === 'done') {
-      this.newState.set('idle');
-    }
+    this.newState.set('sending');
+    setTimeout(() => this.newState.set('done'), 600);
+  }
+
+  resetNew() {
+    this.newState.set('idle');
   }
 }

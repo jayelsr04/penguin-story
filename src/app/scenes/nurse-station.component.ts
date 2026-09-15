@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = 'getError(kind) looks up one error directly.';
 
 const OLD_CODE = `const errors = f.email().errors();
 const requiredError =
@@ -22,7 +25,7 @@ if (requiredError) {
 @Component({
   selector: 'app-nurse-station',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="The Nurse's Station"
@@ -44,10 +47,9 @@ if (requiredError) {
             </div>
           }
         </div>
-        <button type="button" class="tile-btn action-btn" (click)="scanOld()">
-          {{ scanIndex() >= symptoms.length ? 'Reset' : 'Scan chart' }}
-        </button>
+        <button type="button" class="tile-btn action-btn" [disabled]="scanning() || scanIndex() > 0" (click)="scanOld()">Scan chart</button>
         <div class="stat">{{ scanIndex() }} / {{ symptoms.length }} steps</div>
+        <app-reset-button [disabled]="scanning() || scanIndex() === 0" (reset)="resetOld()" />
       </div>
 
       <div new class="chart-scene">
@@ -57,10 +59,9 @@ if (requiredError) {
             <div class="symptom" [class.found]="s === 'required' && newFound()">{{ s }}</div>
           }
         </div>
-        <button type="button" class="tile-btn action-btn" (click)="askNew()">
-          {{ newFound() ? 'Reset' : 'Ask directly' }}
-        </button>
+        <button type="button" class="tile-btn action-btn" [disabled]="newFound()" (click)="askNew()">Ask directly</button>
         <div class="stat" [class.win]="newFound()">{{ newFound() ? '1 step — done' : 'click to ask' }}</div>
+        <app-reset-button [disabled]="!newFound()" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -117,11 +118,7 @@ export class NurseStationComponent {
   engaged = signal(false);
 
   scanOld() {
-    if (this.scanning()) return;
-    if (this.scanIndex() >= this.symptoms.length) {
-      this.scanIndex.set(0);
-      return;
-    }
+    if (this.scanning() || this.scanIndex() > 0) return;
     this.scanning.set(true);
     let i = 0;
     const timer = setInterval(() => {
@@ -134,8 +131,18 @@ export class NurseStationComponent {
     }, 280);
   }
 
+  resetOld() {
+    this.scanIndex.set(0);
+    this.scanning.set(false);
+  }
+
   askNew() {
+    if (this.newFound()) return;
     this.engaged.set(true);
-    this.newFound.update((v) => !v);
+    this.newFound.set(true);
+  }
+
+  resetNew() {
+    this.newFound.set(false);
   }
 }

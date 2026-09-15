@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent } from '../penguin/penguin.component';
+import { ResetButtonComponent } from '../shared/reset-button.component';
+
+export const RECAP_LINE = "One tap checks a whole nest of chicks — markAsTouched() cascades now.";
 
 const OLD_CODE = `markAsTouched(addressGroup);
 markAsTouched(addressGroup.street);
@@ -21,7 +24,7 @@ markAsTouched(addressGroup, {
 @Component({
   selector: 'app-checking-chicks',
   standalone: true,
-  imports: [RoomShellComponent, PenguinComponent],
+  imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
       title="Checking on the Chicks"
@@ -48,6 +51,7 @@ markAsTouched(addressGroup, {
           }
         </div>
         <div class="stat">{{ oldTaps() }} / 4 taps</div>
+        <app-reset-button [disabled]="oldTaps() === 0" (reset)="resetOld()" />
       </div>
 
       <div new class="nest-scene">
@@ -64,6 +68,7 @@ markAsTouched(addressGroup, {
           }
         </button>
         <div class="stat" [class.win]="newChecked()">{{ newChecked() ? '1 tap — done' : 'Click the nest' }}</div>
+        <app-reset-button [disabled]="!newChecked()" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -135,21 +140,25 @@ export class CheckingChicksComponent {
 
   clickChick(i: number) {
     const arr = this.oldChecked();
-    if (arr.every((c) => c)) {
-      this.oldChecked.set([false, false, false, false]);
-      this.oldTaps.set(0);
-      return;
-    }
-    if (!arr[i]) {
-      const next = [...arr];
-      next[i] = true;
-      this.oldChecked.set(next);
-      this.oldTaps.update((v) => v + 1);
-    }
+    if (arr[i]) return;
+    const next = [...arr];
+    next[i] = true;
+    this.oldChecked.set(next);
+    this.oldTaps.update((v) => v + 1);
+  }
+
+  resetOld() {
+    this.oldChecked.set([false, false, false, false]);
+    this.oldTaps.set(0);
   }
 
   toggleNew() {
+    if (this.newChecked()) return;
     this.engaged.set(true);
-    this.newChecked.update((v) => !v);
+    this.newChecked.set(true);
+  }
+
+  resetNew() {
+    this.newChecked.set(false);
   }
 }

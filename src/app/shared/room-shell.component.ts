@@ -18,7 +18,7 @@ export const HALLWAY_STOPS: HallwayStop[] = [
   { wing: 'D', label: 'Adapter Desk' },
 ];
 
-const WING_NAMES: Record<HallwayStop['wing'], string> = {
+export const WING_NAMES: Record<HallwayStop['wing'], string> = {
   A: 'Front Office',
   B: 'Rules & Conditions',
   C: 'Waiting Room',
@@ -170,9 +170,10 @@ const WING_NAMES: Record<HallwayStop['wing'], string> = {
       margin-bottom: 24px;
     }
     .panel {
+      position: relative;
       border-radius: var(--radius);
       border: 1px solid var(--border);
-      padding: 20px 18px;
+      padding: 20px 18px 52px;
       display: flex;
       flex-direction: column;
       align-items: center;
