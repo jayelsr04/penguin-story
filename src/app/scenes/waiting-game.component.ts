@@ -1,134 +1,155 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
-import { SceneShellComponent } from '../shared/scene-shell.component';
+import { RoomShellComponent } from '../shared/room-shell.component';
+
+const OLD_CODE = `debounce(f.username, 500);
+
+minLength(f.username, 3);
+// instant check, forced
+// to wait anyway
+
+validateAsync(f.username, {
+  request: (value) =>
+    checkUsernameAvailable(value),
+});`;
+
+const NEW_CODE = `minLength(f.username, 3);
+// reacts instantly, no delay
+
+validateAsync(f.username, {
+  request: (value) =>
+    checkUsernameAvailable(value),
+  debounce: 500,
+  // ONLY this waits 500ms
+});`;
+
+type TriState = 'idle' | 'checking' | 'done';
 
 @Component({
   selector: 'app-waiting-game',
   standalone: true,
-  imports: [SceneShellComponent],
+  imports: [RoomShellComponent],
   template: `
-    <app-scene-shell
+    <app-room-shell
       title="The Fish Counter Line"
       subtitle="One question is instant. One question takes time. Should they make you wait the same amount?"
-      [caption]="caption()"
-      [mood]="mood()"
-      [index]="4"
-      [total]="4"
-      (play)="toggle()"
+      [stopIndex]="6"
+      [oldCode]="oldCode"
+      [newCode]="newCode"
+      [solved]="engaged()"
       (next)="next.emit()"
       (prev)="prev.emit()"
+      (jump)="jump.emit($event)"
     >
       <div old class="counter-scene">
         <div class="question">
           <span>Is your name spelled right?</span>
-          <span class="status" [class.stuck]="playing()">
-            {{ playing() ? '⏳ waiting…' : '❔' }}
+          <span class="status" [class.stuck]="oldState() !== 'idle'">
+            {{ oldState() === 'idle' ? '—' : oldState() === 'checking' ? 'waiting…' : 'yes ✓' }}
           </span>
         </div>
         <div class="question">
           <span>Is there a fish left?</span>
-          <span class="status" [class.stuck]="playing()">
-            {{ playing() ? '⏳ waiting…' : '❔' }}
+          <span class="status" [class.stuck]="oldState() !== 'idle'">
+            {{ oldState() === 'idle' ? '—' : oldState() === 'checking' ? 'waiting…' : 'yes ✓' }}
           </span>
         </div>
-        @if (playing()) {
-          <div class="callout old-callout">Both questions wait together — even the easy one!</div>
-        }
+        <button type="button" class="tile-btn action-btn" (click)="askOld()">
+          {{ oldState() === 'done' ? 'Reset' : 'Ask both' }}
+        </button>
       </div>
 
       <div new class="counter-scene">
         <div class="question">
           <span>Is your name spelled right?</span>
-          <span class="status" [class.instant]="playing()">
-            {{ playing() ? '✅ yes!' : '❔' }}
-          </span>
+          <span class="status" [class.instant]="newNameDone()">{{ newNameDone() ? 'yes ✓' : '—' }}</span>
         </div>
         <div class="question">
           <span>Is there a fish left?</span>
-          <span class="status" [class.checking]="checkingFish()" [class.done]="fishDone()">
-            {{ fishDone() ? '🐟 yes!' : playing() ? '⏳ checking…' : '❔' }}
+          <span class="status" [class.checking]="newFishState() === 'checking'" [class.done]="newFishState() === 'done'">
+            {{ newFishState() === 'idle' ? '—' : newFishState() === 'checking' ? 'checking…' : 'yes ✓' }}
           </span>
         </div>
-        @if (playing()) {
-          <div class="callout new-callout">The easy question answers right away — only the fish check waits!</div>
-        }
+        <button type="button" class="tile-btn action-btn" (click)="askNew()">
+          {{ newFishState() === 'done' ? 'Reset' : 'Ask both' }}
+        </button>
       </div>
-    </app-scene-shell>
+    </app-room-shell>
   `,
   styles: [`
     .counter-scene {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       width: 100%;
     }
     .question {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: white;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       padding: 10px 14px;
       font-size: 13px;
       font-weight: 600;
-      color: #33445c;
+      color: var(--ink);
     }
     .status {
-      font-weight: 800;
-      font-size: 13px;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 12.5px;
+      color: var(--ink-faint);
       transition: all 0.3s ease;
     }
-    .status.stuck { color: #b23c3c; }
-    .status.instant { color: #1f8a4c; animation: pop 0.3s ease; }
-    .status.checking { color: #b98a2f; }
-    .status.done { color: #1f8a4c; animation: pop 0.3s ease; }
+    .status.stuck { color: var(--ink-muted); }
+    .status.instant { color: var(--accent); animation: pop 0.3s ease; }
+    .status.checking { color: var(--ink-muted); }
+    .status.done { color: var(--accent); animation: pop 0.3s ease; }
     @keyframes pop {
       from { transform: scale(0.6); opacity: 0; }
       to { transform: scale(1); opacity: 1; }
     }
-    .callout {
-      font-size: 12.5px;
+    .action-btn {
+      font-family: var(--sans);
       font-weight: 700;
-      text-align: center;
-      padding: 6px 12px;
-      border-radius: 10px;
+      font-size: 12.5px;
+      color: var(--ink);
+      padding: 8px 16px;
+      align-self: center;
     }
-    .old-callout { background: #ffe4e4; color: #b23c3c; }
-    .new-callout { background: #dcf7e6; color: #1f8a4c; }
   `],
 })
 export class WaitingGameComponent {
   @Output() next = new EventEmitter<void>();
   @Output() prev = new EventEmitter<void>();
+  @Output() jump = new EventEmitter<number>();
 
-  playing = signal(false);
-  checkingFish = signal(false);
-  fishDone = signal(false);
+  oldCode = OLD_CODE;
+  newCode = NEW_CODE;
 
-  caption() {
-    if (this.fishDone()) {
-      return 'The name check was instant — only the slow fish check made anyone wait!';
+  oldState = signal<TriState>('idle');
+  newNameDone = signal(false);
+  newFishState = signal<TriState>('idle');
+  engaged = signal(false);
+
+  askOld() {
+    if (this.oldState() === 'idle') {
+      this.oldState.set('checking');
+      setTimeout(() => this.oldState.set('done'), 900);
+    } else if (this.oldState() === 'done') {
+      this.oldState.set('idle');
     }
-    return this.playing()
-      ? 'Watch — one answer comes instantly, one takes a moment…'
-      : 'Tap "Watch what happens" to compare an instant check vs. a slow one.';
   }
 
-  mood() {
-    return this.fishDone() ? 'proud' : this.playing() ? 'busy' : 'happy';
-  }
-
-  toggle() {
-    const turningOn = !this.playing();
-    this.playing.set(turningOn);
-    this.checkingFish.set(false);
-    this.fishDone.set(false);
-    if (turningOn) {
-      this.checkingFish.set(true);
-      setTimeout(() => {
-        this.checkingFish.set(false);
-        this.fishDone.set(true);
-      }, 1200);
+  askNew() {
+    this.engaged.set(true);
+    if (this.newFishState() === 'idle') {
+      this.newNameDone.set(true);
+      this.newFishState.set('checking');
+      setTimeout(() => this.newFishState.set('done'), 900);
+    } else if (this.newFishState() === 'done') {
+      this.newNameDone.set(false);
+      this.newFishState.set('idle');
     }
   }
 }

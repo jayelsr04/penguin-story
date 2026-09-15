@@ -1,50 +1,72 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
-import { SceneShellComponent } from '../shared/scene-shell.component';
+import { RoomShellComponent } from '../shared/room-shell.component';
+
+const OLD_CODE = `disabled(f.shippingAddress,
+  () => f.sameAsBilling().value());
+
+required(f.email);
+// no clean way to say
+// "only required if X"
+
+hidden(f.promoCode, ...);   // own pattern
+readonly(f.accountId, ...); // own pattern`;
+
+const NEW_CODE = `disabled(f.shippingAddress, {
+  when: () => f.sameAsBilling().value(),
+});
+
+required(f.email, {
+  when: () => f.wantsNewsletter().value(),
+});
+
+hidden(f.promoCode, {
+  when: () => !f.hasPromo().value(),
+});
+
+readonly(f.accountId, {
+  when: () => f.isExistingUser().value(),
+});`;
 
 @Component({
   selector: 'app-universal-ticket',
   standalone: true,
-  imports: [SceneShellComponent],
+  imports: [RoomShellComponent],
   template: `
-    <app-scene-shell
-      title="Three Booths, One Rule"
+    <app-room-shell
+      title="Four Booths, One Rule"
       subtitle="Every booth on the iceberg used to have its own weird 'only if...' shape. Now they all match."
-      [caption]="caption()"
-      [mood]="mood()"
-      [index]="3"
-      [total]="4"
-      (play)="toggle()"
+      [stopIndex]="3"
+      [oldCode]="oldCode"
+      [newCode]="newCode"
+      [solved]="engaged()"
       (next)="next.emit()"
       (prev)="prev.emit()"
+      (jump)="jump.emit($event)"
     >
       <div old class="booths">
-        @for (b of booths; track b.name) {
+        @for (b of booths; track b.name; let i = $index) {
           <div class="booth">
             <div class="booth-name">{{ b.name }}</div>
-            <div class="ticket-shape" [class]="b.shapeClass" [class.wobble]="playing()">
-              {{ b.symbol }}
-            </div>
+            <button type="button" class="tile-btn ticket-shape" [class]="b.shapeClass" (click)="revealOld(i)">
+              {{ oldRevealed()[i] ? b.symbol : '?' }}
+            </button>
           </div>
         }
-        @if (playing()) {
-          <div class="callout old-callout">Every booth has a different shaped rule — confusing!</div>
-        }
+        <div class="stat">{{ oldRevealedCount() }} / 4 shapes learned</div>
       </div>
 
       <div new class="booths">
         @for (b of booths; track b.name) {
           <div class="booth">
             <div class="booth-name">{{ b.name }}</div>
-            <div class="ticket-shape uniform" [class.settle]="playing()">
-              {{ playing() ? '⭐' : '?' }}
-            </div>
+            <button type="button" class="tile-btn ticket-shape uniform" [class.settle]="newRevealed()" (click)="toggleNew()">
+              {{ newRevealed() ? '★' : '?' }}
+            </button>
           </div>
         }
-        @if (playing()) {
-          <div class="callout new-callout">Same star-shaped "when" rule — everywhere!</div>
-        }
+        <div class="stat" [class.win]="newRevealed()">{{ newRevealed() ? '1 click — all 4 done' : 'Click any booth' }}</div>
       </div>
-    </app-scene-shell>
+    </app-room-shell>
   `,
   styles: [`
     .booths {
@@ -60,84 +82,77 @@ import { SceneShellComponent } from '../shared/scene-shell.component';
       align-items: center;
       gap: 8px;
       flex: 1;
-      min-width: 80px;
+      min-width: 70px;
     }
     .booth-name {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      color: #5b6b82;
+      color: var(--ink-muted);
       text-align: center;
     }
     .ticket-shape {
-      width: 52px;
-      height: 52px;
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 17px;
       font-weight: 800;
-      color: white;
-      background: #7a8ba3;
+      color: var(--ink);
       transition: transform 0.35s ease;
     }
-    .shape-circle { border-radius: 50%; background: #4d90fe; }
-    .shape-square { border-radius: 6px; background: #f5a623; }
-    .shape-zigzag {
-      background: #e0568c;
-      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    }
+    .shape-diamond { transform: rotate(45deg); }
     .uniform {
-      border-radius: 12px;
-      background: #cfd8e3;
-      transform: scale(0.9);
+      background: var(--surface-2);
+      transform: scale(0.92);
     }
     .uniform.settle {
-      background: #2fbf6f;
-      transform: scale(1.08);
+      background: var(--surface-accent);
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: scale(1.05);
     }
-    .wobble { animation: wobble 0.5s ease; }
-    @keyframes wobble {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(-6deg); }
-      75% { transform: rotate(6deg); }
-    }
-    .callout {
-      font-size: 12.5px;
-      font-weight: 700;
-      text-align: center;
-      padding: 6px 12px;
-      border-radius: 10px;
-      max-width: 260px;
-      margin-top: 6px;
-      flex-basis: 100%;
-    }
-    .old-callout { background: #ffe4e4; color: #b23c3c; }
-    .new-callout { background: #dcf7e6; color: #1f8a4c; }
+    .stat { flex-basis: 100%; text-align: center; justify-content: center; }
   `],
 })
 export class UniversalTicketComponent {
   @Output() next = new EventEmitter<void>();
   @Output() prev = new EventEmitter<void>();
+  @Output() jump = new EventEmitter<number>();
+
+  oldCode = OLD_CODE;
+  newCode = NEW_CODE;
 
   booths = [
-    { name: 'Fish Buffet', symbol: '●', shapeClass: 'shape-circle' },
-    { name: 'Ice Rink', symbol: '■', shapeClass: 'shape-square' },
-    { name: 'Sledding Hill', symbol: '★', shapeClass: 'shape-zigzag' },
+    { name: 'Shipping', symbol: '●', shapeClass: 'shape-circle' },
+    { name: 'Newsletter', symbol: '■', shapeClass: 'shape-square' },
+    { name: 'Promo Code', symbol: '★', shapeClass: 'shape-zigzag' },
+    { name: 'Account', symbol: '◆', shapeClass: 'shape-diamond' },
   ];
 
-  playing = signal(false);
+  oldRevealed = signal([false, false, false, false]);
+  newRevealed = signal(false);
+  engaged = signal(false);
 
-  caption() {
-    return this.playing()
-      ? 'One shape to learn — it works at every single booth now!'
-      : 'Tap "Watch what happens" to compare three shapes vs. one.';
+  oldRevealedCount() {
+    return this.oldRevealed().filter(Boolean).length;
   }
 
-  mood() {
-    return this.playing() ? 'proud' : 'confused';
+  revealOld(i: number) {
+    const arr = this.oldRevealed();
+    if (arr.every(Boolean)) {
+      this.oldRevealed.set([false, false, false, false]);
+      return;
+    }
+    if (!arr[i]) {
+      const next = [...arr];
+      next[i] = true;
+      this.oldRevealed.set(next);
+    }
   }
 
-  toggle() {
-    this.playing.update((v) => !v);
+  toggleNew() {
+    this.engaged.set(true);
+    this.newRevealed.update((v) => !v);
   }
 }

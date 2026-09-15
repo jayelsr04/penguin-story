@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-export type PenguinMood = 'happy' | 'confused' | 'busy' | 'proud';
+export type PenguinMood = 'happy' | 'confused' | 'busy' | 'proud' | 'walking';
 
 @Component({
   selector: 'app-penguin',
@@ -11,6 +11,7 @@ export type PenguinMood = 'happy' | 'confused' | 'busy' | 'proud';
       [class.confused]="mood() === 'confused'"
       [class.busy]="mood() === 'busy'"
       [class.proud]="mood() === 'proud'"
+      [class.walking]="mood() === 'walking'"
       viewBox="0 0 120 140"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -100,6 +101,21 @@ export type PenguinMood = 'happy' | 'confused' | 'busy' | 'proud';
     @keyframes tilt {
       0%, 100% { transform: rotate(0deg); }
       50% { transform: rotate(-6deg); }
+    }
+    .walking { animation: waddle 0.35s ease-in-out infinite; }
+    .walking .foot:nth-of-type(1) { animation: step-left 0.35s ease-in-out infinite; }
+    .walking .foot:nth-of-type(2) { animation: step-right 0.35s ease-in-out infinite; }
+    @keyframes waddle {
+      0%, 100% { transform: rotate(-4deg) translateY(0); }
+      50% { transform: rotate(4deg) translateY(-4px); }
+    }
+    @keyframes step-left {
+      0%, 100% { transform: translateY(0) scaleX(1); }
+      50% { transform: translateY(-3px) scaleX(0.85); }
+    }
+    @keyframes step-right {
+      0%, 100% { transform: translateY(-3px) scaleX(0.85); }
+      50% { transform: translateY(0) scaleX(1); }
     }
   `],
 })
