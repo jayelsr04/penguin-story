@@ -27,7 +27,7 @@ onTeamRosterChanged() {
   template: `
     <app-room-shell
       title="The Seat Re-Check Booth"
-      subtitle="The seat itself gets taken in real time. The question is whether the form's own display ever catches up."
+      subtitle="This seat's already taken, but selecting it won't tell you that on its own. Can the form ever find out?"
       [stopIndex]="7"
       [oldCode]="oldCode"
       [newCode]="newCode"
@@ -37,45 +37,68 @@ onTeamRosterChanged() {
       (jump)="jump.emit($event)"
     >
       <div old class="theater-scene">
-        <span class="pip pip-md"><app-penguin mood="confused" /></span>
+        <span class="pip pip-md"><app-penguin mood="happy" /></span>
+        <button
+          type="button"
+          class="refresh-btn"
+          disabled
+          title="Nothing rechecks it in the old version"
+        >⟳</button>
         <div class="row">
           <div class="seat filled"></div>
           <div class="seat filled"></div>
-          <div class="seat tracked" [class.filled]="oldBooked()"></div>
+          <button
+            type="button"
+            class="seat seat-btn tracked"
+            [disabled]="oldSeatClicked()"
+            (click)="clickOldSeat()"
+            aria-label="Try this seat"
+          ></button>
           <div class="seat filled"></div>
           <div class="seat filled"></div>
         </div>
+        <div class="seat-status">{{ oldSeatClicked() ? 'Seat selected ✓' : 'Try this seat' }}</div>
         <div class="labels">
-          <div class="label">Reality: <strong>{{ oldBooked() ? 'Taken' : 'Available' }}</strong></div>
+          <div class="label">Reality: <strong>Taken</strong></div>
           <div class="label">Form says: <strong>Available</strong></div>
         </div>
-        <div class="btn-row">
-          <button type="button" class="tile-btn action-btn" [disabled]="oldBooked()" (click)="toggleOldBooked()">Someone books it</button>
-          <button type="button" class="tile-btn action-btn" disabled title="Nothing rechecks it in the old version">Recheck</button>
-        </div>
-        <app-reset-button [disabled]="!oldBooked()" (reset)="resetOld()" />
+        <app-reset-button [disabled]="!oldSeatClicked()" (reset)="resetOld()" />
       </div>
 
       <div new class="theater-scene">
-        <span class="pip pip-md"><app-penguin [mood]="newFormUpdated() ? 'proud' : (newBooked() ? 'busy' : 'happy')" /></span>
+        <span class="pip pip-md"><app-penguin [mood]="newFormSynced() ? 'proud' : 'happy'" /></span>
+        <button
+          type="button"
+          class="refresh-btn"
+          [disabled]="!newSeatClicked() || newFormSynced()"
+          [class.pulse]="newSeatClicked() && !newFormSynced()"
+          (click)="recheckNew()"
+          title="Recheck against reality"
+        >⟳</button>
         <div class="row">
           <div class="seat filled"></div>
           <div class="seat filled"></div>
-          <div class="seat tracked" [class.filled]="newBooked()"></div>
+          <button
+            type="button"
+            class="seat seat-btn tracked"
+            [class.errored]="newFormSynced()"
+            [disabled]="newSeatClicked()"
+            (click)="clickNewSeat()"
+            aria-label="Try this seat"
+          ></button>
           <div class="seat filled"></div>
           <div class="seat filled"></div>
         </div>
+        @if (newFormSynced()) {
+          <div class="seat-error">⚠ Seat already taken</div>
+        } @else {
+          <div class="seat-status">{{ newSeatClicked() ? 'Seat selected ✓' : 'Try this seat' }}</div>
+        }
         <div class="labels">
-          <div class="label">Reality: <strong [class.mismatch]="newBooked() && !newFormUpdated()">{{ newBooked() ? 'Taken' : 'Available' }}</strong></div>
-          <div class="label">Form says: <strong [class.win]="newFormUpdated()">{{ newFormUpdated() ? 'Taken' : 'Available' }}</strong></div>
+          <div class="label">Reality: <strong>Taken</strong></div>
+          <div class="label">Form says: <strong [class.mismatch]="newSeatClicked() && !newFormSynced()" [class.win]="newFormSynced()">{{ newFormSynced() ? 'Taken' : 'Available' }}</strong></div>
         </div>
-        <div class="btn-row">
-          <button type="button" class="tile-btn action-btn" [disabled]="newBooked()" (click)="toggleNewBooked()">Someone books it</button>
-          <button type="button" class="tile-btn action-btn" [disabled]="!newBooked() || newFormUpdated()" [class.pulse]="newBooked() && !newFormUpdated()" (click)="recheckNew()">
-            Recheck
-          </button>
-        </div>
-        <app-reset-button [disabled]="!newBooked()" (reset)="resetNew()" />
+        <app-reset-button [disabled]="!newSeatClicked()" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
@@ -113,18 +136,56 @@ onTeamRosterChanged() {
     }
     .seat.filled { background: var(--ink-faint); border-color: var(--ink-faint); }
     .seat.tracked { border-color: var(--accent); border-width: 2px; }
-    .btn-row { display: flex; gap: 8px; }
-    .action-btn {
-      font-family: var(--sans);
-      font-weight: 700;
-      font-size: 12px;
-      color: var(--ink);
-      padding: 7px 14px;
+    .seat-btn {
+      padding: 0;
+      appearance: none;
+      font: inherit;
+      cursor: pointer;
     }
-    .action-btn.pulse { animation: pulse 0.8s ease-in-out infinite; }
+    .seat-btn:disabled { cursor: default; }
+    .seat.errored { background: var(--surface-accent); }
+    .seat-status {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-faint);
+    }
+    .seat-error {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      animation: seat-pop 0.3s ease;
+    }
+    @keyframes seat-pop {
+      from { opacity: 0; transform: scale(0.7); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .refresh-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    }
+    .refresh-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .refresh-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .refresh-btn.pulse { animation: pulse 0.8s ease-in-out infinite; border-color: var(--accent); color: var(--accent); }
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
+      50% { transform: scale(1.1); }
     }
   `],
 })
@@ -136,36 +197,37 @@ export class SeatRecheckBoothComponent {
   oldCode = OLD_CODE;
   newCode = NEW_CODE;
 
-  // "Booked" = reality — the seat itself, updates instantly on both sides.
-  oldBooked = signal(false);
-  newBooked = signal(false);
-  // "FormUpdated" = what the form displays — only the new side can ever catch up to reality.
-  newFormUpdated = signal(false);
+  // The seat is already taken in reality on both sides, but selecting it looks like it worked —
+  // neither side's validator re-checks just because the seat was clicked.
+  oldSeatClicked = signal(false);
+  newSeatClicked = signal(false);
+  // "FormSynced" = whether an explicit recheck has forced the form to catch up to reality.
+  newFormSynced = signal(false);
   engaged = signal(false);
 
-  toggleOldBooked() {
-    if (this.oldBooked()) return;
-    this.oldBooked.set(true);
+  clickOldSeat() {
+    if (this.oldSeatClicked()) return;
+    this.oldSeatClicked.set(true);
   }
 
   resetOld() {
-    this.oldBooked.set(false);
+    this.oldSeatClicked.set(false);
   }
 
-  toggleNewBooked() {
-    if (this.newBooked()) return;
+  clickNewSeat() {
+    if (this.newSeatClicked()) return;
     this.engaged.set(true);
-    this.newBooked.set(true);
+    this.newSeatClicked.set(true);
   }
 
   recheckNew() {
-    if (!this.newBooked() || this.newFormUpdated()) return;
+    if (!this.newSeatClicked() || this.newFormSynced()) return;
     this.engaged.set(true);
-    this.newFormUpdated.set(true);
+    this.newFormSynced.set(true);
   }
 
   resetNew() {
-    this.newBooked.set(false);
-    this.newFormUpdated.set(false);
+    this.newSeatClicked.set(false);
+    this.newFormSynced.set(false);
   }
 }

@@ -3,20 +3,20 @@ import { RoomShellComponent } from '../shared/room-shell.component';
 import { PenguinComponent, PenguinMood } from '../penguin/penguin.component';
 import { ResetButtonComponent } from '../shared/reset-button.component';
 
-export const RECAP_LINE = 'debounce can now wait for blur, not just typing.';
+export const RECAP_LINE = "debounce can now wait for you to walk away, not just pause typing.";
 
-const OLD_CODE = `debounce(f.username, 300);
-// waits 300ms after each
-// keystroke pauses —
+const OLD_CODE = `debounce(f.guestName, 400);
+// waits 400ms after each
+// keystroke pause —
 // that's the only wait mode
 // there is`;
 
-const NEW_CODE = `debounce(f.username, 300);
+const NEW_CODE = `debounce(f.guestName, 400);
 // same as before: keystroke
 
-debounce(f.username, 300, 'blur');
-// NEW: waits until they
-// click away, then reacts`;
+debounce(f.guestName, 400, 'blur');
+// NEW: ignores typing pauses,
+// waits until they step away`;
 
 @Component({
   selector: 'app-doorbell',
@@ -24,8 +24,8 @@ debounce(f.username, 300, 'blur');
   imports: [RoomShellComponent, PenguinComponent, ResetButtonComponent],
   template: `
     <app-room-shell
-      title="The Doorbell"
-      subtitle="A doorbell waits a moment before ringing, in case more presses are coming. Can it also wait for you to just... leave?"
+      title="The Guestbook Podium"
+      subtitle="A guestbook only wants to check your name once you're done writing it. Should it wait for your pen to pause, or wait for you to actually step back?"
       [stopIndex]="5"
       [oldCode]="oldCode"
       [newCode]="newCode"
@@ -34,61 +34,67 @@ debounce(f.username, 300, 'blur');
       (prev)="prev.emit()"
       (jump)="jump.emit($event)"
     >
-      <div old class="door-scene">
-        <span class="pip pip-md"><app-penguin [mood]="oldPending() ? 'busy' : oldRinging() ? 'happy' : 'walking'" /></span>
-        <div class="door">🚪<span class="bell" [class.ring]="oldRinging()">🔔</span></div>
-        <div class="btn-row">
-          <button type="button" class="tile-btn action-btn" [disabled]="oldPending() || oldRinging()" (click)="pressOld()">Press</button>
-          <button type="button" class="tile-btn action-btn" disabled title="Not a wait mode in the old version">Walk away</button>
-        </div>
-        <div class="stat">{{ oldPending() ? 'waiting…' : oldRinging() ? 'rang' : 'click Press' }}</div>
-        <app-reset-button [disabled]="!oldRinging()" (reset)="resetOld()" />
+      <div old class="podium-scene">
+        <span class="pip pip-md"><app-penguin [mood]="oldMood()" /></span>
+        <div class="podium">📖</div>
+        <input
+          type="text"
+          class="guest-input"
+          placeholder="Sign here…"
+          [disabled]="oldResolved()"
+          [value]="oldText()"
+          (input)="onOldInput($event)"
+        />
+        <div class="stat" [class.win]="oldResolved()">{{ oldStatus() }}</div>
+        <app-reset-button [disabled]="!oldResolved() && !oldText()" (reset)="resetOld()" />
       </div>
 
-      <div new class="door-scene">
+      <div new class="podium-scene">
         <span class="pip pip-md"><app-penguin [mood]="newMood()" /></span>
-        <div class="door">🚪<span class="bell" [class.ring]="newRinging()">🔔</span></div>
-        <div class="btn-row">
-          <button type="button" class="tile-btn action-btn" [disabled]="newBusy()" (click)="pressNew()">Press</button>
-          <button type="button" class="tile-btn action-btn" [disabled]="newBusy()" (click)="walkAwayNew()">Walk away</button>
-        </div>
-        <div class="stat" [class.win]="newRinging()">{{ newStatus() }}</div>
-        <app-reset-button [disabled]="!newRinging()" (reset)="resetNew()" />
+        <div class="podium">📖</div>
+        <input
+          type="text"
+          class="guest-input"
+          placeholder="Sign here…"
+          [disabled]="newResolved()"
+          [value]="newText()"
+          (input)="onNewInput($event)"
+          (blur)="onNewBlur()"
+        />
+        <div class="stat" [class.win]="newResolved()">{{ newStatus() }}</div>
+        <app-reset-button [disabled]="!newResolved() && !newText()" (reset)="resetNew()" />
       </div>
     </app-room-shell>
   `,
   styles: [`
-    .door-scene {
+    .podium-scene {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 12px;
       width: 100%;
     }
-    .door {
-      position: relative;
+    .podium {
       font-size: 38px;
     }
-    .bell {
-      position: absolute;
-      top: -14px;
-      right: -14px;
-      font-size: 19px;
-      transform: scale(1);
-      transition: transform 0.15s ease;
-    }
-    .bell.ring { animation: ring 0.3s ease 2; }
-    @keyframes ring {
-      0%, 100% { transform: rotate(0deg) scale(1); }
-      50% { transform: rotate(18deg) scale(1.3); }
-    }
-    .btn-row { display: flex; gap: 8px; }
-    .action-btn {
+    .guest-input {
+      width: 100%;
+      max-width: 200px;
       font-family: var(--sans);
-      font-weight: 700;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--ink);
-      padding: 7px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .guest-input:focus {
+      border-color: var(--accent);
+    }
+    .guest-input:disabled {
+      opacity: 0.6;
     }
   `],
 })
@@ -100,64 +106,85 @@ export class DoorbellComponent {
   oldCode = OLD_CODE;
   newCode = NEW_CODE;
 
-  oldRinging = signal(false);
+  oldText = signal('');
   oldPending = signal(false);
-  newRinging = signal(false);
-  newPending = signal<'idle' | 'press' | 'walk'>('idle');
+  oldResolved = signal(false);
+  private oldTimer?: ReturnType<typeof setTimeout>;
+
+  newText = signal('');
+  newPending = signal(false);
+  newResolved = signal(false);
+  private newTimer?: ReturnType<typeof setTimeout>;
+
   engaged = signal(false);
 
-  pressOld() {
-    if (this.oldPending() || this.oldRinging()) return;
-    this.oldPending.set(true);
-    setTimeout(() => {
+  onOldInput(event: Event) {
+    if (this.oldResolved()) return;
+    const value = (event.target as HTMLInputElement).value;
+    this.oldText.set(value);
+    this.engaged.set(true);
+    clearTimeout(this.oldTimer);
+    if (!value) {
       this.oldPending.set(false);
-      this.oldRinging.set(true);
+      return;
+    }
+    this.oldPending.set(true);
+    this.oldTimer = setTimeout(() => {
+      this.oldPending.set(false);
+      this.oldResolved.set(true);
     }, 400);
   }
 
   resetOld() {
-    this.oldRinging.set(false);
+    clearTimeout(this.oldTimer);
+    this.oldText.set('');
     this.oldPending.set(false);
+    this.oldResolved.set(false);
   }
 
-  pressNew() {
-    if (this.newPending() !== 'idle' || this.newRinging()) return;
-    this.engaged.set(true);
-    this.newPending.set('press');
-    setTimeout(() => {
-      this.newPending.set('idle');
-      this.newRinging.set(true);
-    }, 400);
+  onNewInput(event: Event) {
+    if (this.newResolved()) return;
+    this.newText.set((event.target as HTMLInputElement).value);
   }
 
-  walkAwayNew() {
-    if (this.newPending() !== 'idle' || this.newRinging()) return;
+  onNewBlur() {
+    if (this.newResolved() || !this.newText()) return;
     this.engaged.set(true);
-    this.newPending.set('walk');
-    setTimeout(() => {
-      this.newPending.set('idle');
-      this.newRinging.set(true);
+    this.newPending.set(true);
+    clearTimeout(this.newTimer);
+    this.newTimer = setTimeout(() => {
+      this.newPending.set(false);
+      this.newResolved.set(true);
     }, 400);
   }
 
   resetNew() {
-    this.newRinging.set(false);
-    this.newPending.set('idle');
+    clearTimeout(this.newTimer);
+    this.newText.set('');
+    this.newPending.set(false);
+    this.newResolved.set(false);
+  }
+
+  oldMood(): PenguinMood {
+    if (this.oldPending()) return 'busy';
+    return this.oldResolved() ? 'proud' : 'happy';
+  }
+
+  oldStatus() {
+    if (this.oldPending()) return 'checking…';
+    if (this.oldResolved()) return 'checked ✓';
+    return 'sign the book';
   }
 
   newMood(): PenguinMood {
-    if (this.newPending() === 'walk') return 'walking';
-    if (this.newPending() === 'press') return 'busy';
-    return this.newRinging() ? 'proud' : 'happy';
-  }
-
-  newBusy() {
-    return this.newPending() !== 'idle' || this.newRinging();
+    if (this.newPending()) return 'busy';
+    if (this.newResolved()) return 'proud';
+    return this.newText() ? 'walking' : 'happy';
   }
 
   newStatus() {
-    if (this.newPending() === 'press') return 'pressing…';
-    if (this.newPending() === 'walk') return 'walking away…';
-    return this.newRinging() ? 'rang' : 'click either button';
+    if (this.newPending()) return 'checking…';
+    if (this.newResolved()) return 'checked ✓';
+    return this.newText() ? 'still writing… (won\'t check yet)' : 'sign the book, then step away';
   }
 }

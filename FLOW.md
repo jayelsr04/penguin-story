@@ -77,15 +77,13 @@ No room has a `setTimeout`-based auto-clear anymore. Nothing in the app gates or
 
 ## Wing C — Waiting Room
 
-### Stop 5 — "The Doorbell" (`doorbell.component.ts`)
+### Stop 5 — "The Guestbook Podium" (`doorbell.component.ts`, still `app-doorbell`)
 **Teaches:** `debounce(field, ms, 'blur')` — waiting for blur, not just keystroke pauses.
 
-- **Before panel:** "Press" rings the bell after a 400ms delay (mood → busy while pending, happy once rung); "Walk away" is permanently disabled (tooltip: "Not a wait mode in the old version"). **Reset** clears the ring.
-- **After panel — now genuinely differentiated (Fix 2):**
-  - **"Press"** → mood goes `busy` (wing-flap) during the 400ms delay, status reads "pressing…".
-  - **"Walk away"** → mood goes `walking` (waddle + footstep animation) during the 400ms delay, status reads "walking away…".
-  - Both converge on `proud` + "rang" once the delay completes. Both buttons disable once pending/rung; **Reset** re-enables them.
-  - The point: a user watching can now tell *which* trigger fired from the penguin's animation and status text alone, not just that both happened to work.
+- Both panels now use a **real text input** ("Sign here…") instead of buttons, so the old/new difference is the actual trigger condition, not two buttons doing the same thing.
+- **Before panel:** every keystroke restarts a 400ms timer (classic keystroke-pause debounce) — mood → `busy` while a pause is being timed, "checking…" status. Once 400ms passes without a new keystroke, it resolves ("checked ✓", mood → `proud`) and the input disables. **Reset** clears the text and re-enables input.
+- **After panel:** typing does nothing but update the field (mood → `walking`, status "still writing… (won't check yet)") no matter how long you pause. The 400ms timer only starts on **blur** (clicking/tabbing away) — mood → `busy` → `proud`, "checking…" → "checked ✓". Input disables once resolved; **Reset** clears it.
+- The point: a user can literally keep typing with pauses in the After panel and see nothing happen, then click away and watch it resolve — directly demonstrating that blur, not typing rhythm, is the new wait condition.
 
 ### Stop 6 — "The Fish Counter Line" (`waiting-game.component.ts`)
 **Teaches:** `debounce` scoped to only the async check, not instant sync checks too.
@@ -98,9 +96,10 @@ No room has a `setTimeout`-based auto-clear anymore. Nothing in the app gates or
 ### Stop 7 — "The Seat Re-Check Booth" (`seat-recheck-booth.component.ts`)
 **Teaches:** `reloadValidation()` forcing a fresh check on demand (vs. Reactive Forms' `updateValueAndValidity()`, which Signal Forms had no equivalent for).
 
-- **Both panels now show two persistent, always-visible labels (Fix 3):** `Reality: {Available | Taken}` and `Form says: {Available | Taken}`, so the mismatch between them is something the user can literally read, not infer from a stat color.
-- **Before panel:** "Someone books it" sets Reality → Taken (one-shot, then disabled); "Form says" is hardcoded to always read "Available" (nothing rechecks it — Recheck stays permanently disabled). **Reset** clears the booking.
-- **After panel:** "Someone books it" sets Reality → Taken (one-shot, then disabled). "Form says" only updates when **Recheck** is clicked (which is disabled until there's an unsynced booking, and pulses while pending). **Reset** clears both Reality and Form-says back to Available.
+- **Both panels now show two persistent, always-visible labels:** `Reality: Taken` (constant — the seat is already taken from the start, no setup step needed) and `Form says: {Available | Taken}`, so the mismatch between them is something the user can literally read, not infer from a stat color.
+- **Interaction is now the seat itself, not separate buttons:** clicking the tracked seat is a one-shot "try this seat" action. In both panels it just shows a neutral "Seat selected ✓" — selecting it does **not** by itself reveal anything is wrong, because nothing about the click re-runs a check against reality (the same way a real field's validator only reruns when its own value changes, not when unrelated external state does).
+- **Before panel:** a refresh icon (⟳, top-right of the panel) is permanently disabled ("Nothing rechecks it in the old version") — "Form says" stays wrong ("Available") forever, and there's no way to ever discover the seat is actually taken. **Reset** clears the seat-click state.
+- **After panel:** the same refresh icon is disabled until you've clicked the seat, then enables (and pulses) — clicking it calls the `reloadValidation()`-equivalent recheck, which is what actually reveals the inline `⚠ Seat already taken` error and updates "Form says" to "Taken". The error is the *payoff* of the manual recheck, not something the seat click shows on its own. **Reset** clears both the seat-click state and the synced status.
 
 ---
 
@@ -145,9 +144,9 @@ No room has a `setTimeout`-based auto-clear anymore. Nothing in the app gates or
 | 2 | Checking on the Chicks | `checking-chicks.component.ts` | `markAsTouched()` cascade | clears all 4 chicks + tap count |
 | 3 | Four Booths, One Rule | `universal-ticket.component.ts` | `{ when }` condition | clears all 4 booth reveals |
 | 4 | The Bouncer Booth | `bouncer-booth.component.ts` | `minDate()`/`maxDate()` (computed verdicts) | clears all 3 test results |
-| 5 | The Doorbell | `doorbell.component.ts` | `debounce(..., 'blur')` (Press vs Walk away now visually distinct) | clears ring + pending state |
+| 5 | The Guestbook Podium | `doorbell.component.ts` | `debounce(..., 'blur')` (real typing vs. real blur) | clears guest text + pending state |
 | 6 | The Fish Counter Line | `waiting-game.component.ts` | scoped `debounce` on async only | clears both question states |
-| 7 | The Seat Re-Check Booth | `seat-recheck-booth.component.ts` | `reloadValidation()` (Reality/Form-says labels) | clears booking + sync state |
+| 7 | The Seat Re-Check Booth | `seat-recheck-booth.component.ts` | `reloadValidation()` (click seat → error, refresh icon re-syncs) | clears seat-click + sync state |
 | 8 | The Nurse's Station | `nurse-station.component.ts` | `getError(field, kind)` | clears scan/found state |
 | 9 | The Translator Booth | `translator-booth.component.ts` | legacy CVA validators auto-picked-up | clears send state |
 | 10 | Universal Adapter Desk | `adapter-desk.component.ts` | one component, 3 form APIs + `reset(f)` | clears socket lights |

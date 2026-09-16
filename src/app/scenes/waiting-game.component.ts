@@ -47,13 +47,13 @@ type TriState = 'idle' | 'checking' | 'done';
       <div old class="counter-scene">
         <span class="pip pip-md counter-pip"><app-penguin [mood]="oldState() === 'checking' ? 'busy' : 'confused'" /></span>
         <div class="question">
-          <span>Is your name spelled right?</span>
+          <span>Is your name spelled right? <span class="tag">(instant)</span></span>
           <span class="status" [class.stuck]="oldState() !== 'idle'">
             {{ oldState() === 'idle' ? '—' : oldState() === 'checking' ? 'waiting…' : 'yes ✓' }}
           </span>
         </div>
         <div class="question">
-          <span>Is there a fish left?</span>
+          <span>Is there a fish left? <span class="tag">(back-room check)</span></span>
           <span class="status" [class.stuck]="oldState() !== 'idle'">
             {{ oldState() === 'idle' ? '—' : oldState() === 'checking' ? 'waiting…' : 'yes ✓' }}
           </span>
@@ -65,11 +65,11 @@ type TriState = 'idle' | 'checking' | 'done';
       <div new class="counter-scene">
         <span class="pip pip-md counter-pip"><app-penguin [mood]="newFishState() === 'checking' ? 'busy' : (engaged() ? 'proud' : 'happy')" /></span>
         <div class="question">
-          <span>Is your name spelled right?</span>
+          <span>Is your name spelled right? <span class="tag">(instant)</span></span>
           <span class="status" [class.instant]="newNameDone()">{{ newNameDone() ? 'yes ✓' : '—' }}</span>
         </div>
         <div class="question">
-          <span>Is there a fish left?</span>
+          <span>Is there a fish left? <span class="tag">(back-room check)</span></span>
           <span class="status" [class.checking]="newFishState() === 'checking'" [class.done]="newFishState() === 'done'">
             {{ newFishState() === 'idle' ? '—' : newFishState() === 'checking' ? 'checking…' : 'yes ✓' }}
           </span>
@@ -98,6 +98,11 @@ type TriState = 'idle' | 'checking' | 'done';
       font-size: 13px;
       font-weight: 600;
       color: var(--ink);
+    }
+    .tag {
+      font-weight: 500;
+      font-size: 11px;
+      color: var(--ink-faint);
     }
     .status {
       font-family: var(--mono);

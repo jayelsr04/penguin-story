@@ -41,9 +41,9 @@ if (requiredError) {
       <div old class="chart-scene">
         <span class="pip pip-md"><app-penguin [mood]="scanning() ? 'busy' : 'confused'" /></span>
         <div class="clipboard">
-          @for (s of symptoms; track s; let i = $index) {
-            <div class="symptom" [class.scanned]="scanIndex() > i" [class.found]="s === 'required' && scanIndex() > i">
-              {{ s }}
+          @for (s of symptoms; track s.kind; let i = $index) {
+            <div class="symptom" [class.scanned]="scanIndex() > i" [class.found]="s.kind === 'required' && scanIndex() > i">
+              {{ s.kind }} <span class="gloss">({{ s.gloss }})</span>
             </div>
           }
         </div>
@@ -55,8 +55,8 @@ if (requiredError) {
       <div new class="chart-scene">
         <span class="pip pip-md"><app-penguin [mood]="newFound() ? 'proud' : 'happy'" /></span>
         <div class="clipboard">
-          @for (s of symptoms; track s) {
-            <div class="symptom" [class.found]="s === 'required' && newFound()">{{ s }}</div>
+          @for (s of symptoms; track s.kind) {
+            <div class="symptom" [class.found]="s.kind === 'required' && newFound()">{{ s.kind }} <span class="gloss">({{ s.gloss }})</span></div>
           }
         </div>
         <button type="button" class="tile-btn action-btn" [disabled]="newFound()" (click)="askNew()">Ask directly</button>
@@ -94,6 +94,10 @@ if (requiredError) {
     }
     .symptom.scanned { background: var(--surface-2); color: var(--ink); }
     .symptom.found { background: var(--surface-accent); color: var(--accent); }
+    .gloss {
+      font-weight: 500;
+      color: var(--ink-faint);
+    }
     .action-btn {
       font-family: var(--sans);
       font-weight: 700;
@@ -111,7 +115,12 @@ export class NurseStationComponent {
   oldCode = OLD_CODE;
   newCode = NEW_CODE;
 
-  symptoms = ['tooShort', 'required', 'missingNumber', 'noSpecialChar'];
+  symptoms = [
+    { kind: 'tooShort', gloss: 'too short' },
+    { kind: 'required', gloss: 'left blank' },
+    { kind: 'missingNumber', gloss: 'no number' },
+    { kind: 'noSpecialChar', gloss: 'no special character' },
+  ];
   scanIndex = signal(0);
   scanning = signal(false);
   newFound = signal(false);
