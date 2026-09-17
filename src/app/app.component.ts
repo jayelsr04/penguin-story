@@ -25,6 +25,17 @@ import { RECAP_LINE as ADAPTER_DESK_RECAP } from './scenes/adapter-desk.componen
 
 type Screen = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 'outro';
 
+// Survives a browser refresh so reloading lands back on the same room
+// instead of resetting to the intro. Cleared when the tab actually closes.
+const SCREEN_STORAGE_KEY = 'pip-office-screen';
+
+function loadStoredScreen(): Screen {
+  const raw = sessionStorage.getItem(SCREEN_STORAGE_KEY);
+  if (raw === 'intro' || raw === 'outro') return raw;
+  const n = Number(raw);
+  return n >= 1 && n <= 10 ? (n as Screen) : 'intro';
+}
+
 // One recap line per room, in stop order (1..10) — each line lives in its
 // own room's file next to that room's title/code, so changing a room's
 // concept can't silently drift out of sync with the outro recap.
@@ -82,7 +93,7 @@ const RECAP = buildRecap();
             <div class="cover-top">
             <div class="cover-left">
               <div class="status-tag"><span class="dot"></span> Angular Signal Forms v22 · Field Notes</div>
-              <h1 class="cover-title">Eleven changes,<br>one form at a<br>time.</h1>
+              <h1 class="cover-title">What's New<br>in Signal<br>Forms v22</h1>
               <p class="cover-desc">
                 Pip runs the office on Iceberg Island — built, room by room, as one big
                 Angular Signal Forms instance. Walk through ten stops and see exactly
@@ -364,7 +375,7 @@ class CustomInput &#123;
   `],
 })
 export class AppComponent {
-  screen = signal<Screen>('intro');
+  screen = signal<Screen>(loadStoredScreen());
   fading = signal(false);
   recap = RECAP;
 
@@ -376,6 +387,7 @@ export class AppComponent {
     this.fading.set(true);
     setTimeout(() => {
       this.screen.set(s);
+      sessionStorage.setItem(SCREEN_STORAGE_KEY, String(s));
       window.scrollTo({ top: 0, behavior: 'smooth' });
       requestAnimationFrame(() => this.fading.set(false));
     }, 150);
