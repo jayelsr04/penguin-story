@@ -78,6 +78,78 @@ readonly(f.accountId, {
         </div>
         <app-reset-button [disabled]="!newRevealed()" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <label class="real-check-row">
+          <input type="checkbox" [checked]="oldSameShipping()" (change)="toggleOldSame()" />
+          Same as shipping address
+        </label>
+        <div class="real-collapsible snap" [class.open]="!oldSameShipping()">
+          <div class="real-field">
+            <label class="real-label" for="ut-old-ship">Shipping address</label>
+            <input id="ut-old-ship" type="text" class="real-input" placeholder="123 Iceberg Way" />
+          </div>
+        </div>
+
+        <label class="real-check-row">
+          <input type="checkbox" [checked]="oldNewsletterChecked()" (change)="toggleOldNewsletter()" />
+          Subscribe to newsletter
+        </label>
+        <div class="real-collapsible jumpy" [class.open]="oldNewsletterVisible()">
+          <div class="real-field">
+            <label class="real-label" for="ut-old-freq">Email frequency</label>
+            <select id="ut-old-freq" class="real-select">
+              <option>Weekly</option>
+              <option>Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="real-field">
+          <label class="real-label" for="ut-old-promo">Promo code</label>
+          <input id="ut-old-promo" type="text" class="real-input" [value]="oldPromoText()" (input)="onOldPromoInput($event)" />
+        </div>
+        @if (oldPromoApplied()) {
+          <div class="real-badge bounce">Applied ✓</div>
+        }
+        <app-reset-button [disabled]="!oldRealDirty()" (reset)="resetOldReal()" />
+      </div>
+
+      <div new-real class="real-form">
+        <label class="real-check-row">
+          <input type="checkbox" [checked]="newSameShipping()" (change)="toggleNewSame()" />
+          Same as shipping address
+        </label>
+        <div class="real-collapsible uniform" [class.open]="!newSameShipping()">
+          <div class="real-field">
+            <label class="real-label" for="ut-new-ship">Shipping address</label>
+            <input id="ut-new-ship" type="text" class="real-input" placeholder="123 Iceberg Way" />
+          </div>
+        </div>
+
+        <label class="real-check-row">
+          <input type="checkbox" [checked]="newNewsletterChecked()" (change)="toggleNewNewsletter()" />
+          Subscribe to newsletter
+        </label>
+        <div class="real-collapsible uniform" [class.open]="newNewsletterChecked()">
+          <div class="real-field">
+            <label class="real-label" for="ut-new-freq">Email frequency</label>
+            <select id="ut-new-freq" class="real-select">
+              <option>Weekly</option>
+              <option>Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="real-field">
+          <label class="real-label" for="ut-new-promo">Promo code</label>
+          <input id="ut-new-promo" type="text" class="real-input" [value]="newPromoText()" (input)="onNewPromoInput($event)" />
+        </div>
+        @if (newPromoText()) {
+          <div class="real-badge uniform-in">Applied ✓</div>
+        }
+        <app-reset-button [disabled]="!newRealDirty()" (reset)="resetNewReal()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -177,5 +249,75 @@ export class UniversalTicketComponent {
 
   resetNew() {
     this.newRevealed.set(false);
+  }
+
+  oldSameShipping = signal(false);
+  oldNewsletterChecked = signal(false);
+  oldNewsletterVisible = signal(false);
+  oldPromoText = signal('');
+  oldPromoApplied = signal(false);
+  private oldNewsletterTimer?: ReturnType<typeof setTimeout>;
+
+  newSameShipping = signal(false);
+  newNewsletterChecked = signal(false);
+  newPromoText = signal('');
+
+  toggleOldSame() {
+    this.oldSameShipping.update((v) => !v);
+  }
+
+  toggleOldNewsletter() {
+    const next = !this.oldNewsletterChecked();
+    this.oldNewsletterChecked.set(next);
+    clearTimeout(this.oldNewsletterTimer);
+    if (next) {
+      this.oldNewsletterTimer = setTimeout(() => this.oldNewsletterVisible.set(true), 400);
+    } else {
+      this.oldNewsletterVisible.set(false);
+    }
+  }
+
+  onOldPromoInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.oldPromoText.set(value);
+    this.oldPromoApplied.set(!!value);
+  }
+
+  oldRealDirty() {
+    return this.oldSameShipping() || this.oldNewsletterChecked() || !!this.oldPromoText();
+  }
+
+  resetOldReal() {
+    clearTimeout(this.oldNewsletterTimer);
+    this.oldSameShipping.set(false);
+    this.oldNewsletterChecked.set(false);
+    this.oldNewsletterVisible.set(false);
+    this.oldPromoText.set('');
+    this.oldPromoApplied.set(false);
+  }
+
+  toggleNewSame() {
+    this.engaged.set(true);
+    this.newSameShipping.update((v) => !v);
+  }
+
+  toggleNewNewsletter() {
+    this.engaged.set(true);
+    this.newNewsletterChecked.update((v) => !v);
+  }
+
+  onNewPromoInput(event: Event) {
+    this.engaged.set(true);
+    this.newPromoText.set((event.target as HTMLInputElement).value);
+  }
+
+  newRealDirty() {
+    return this.newSameShipping() || this.newNewsletterChecked() || !!this.newPromoText();
+  }
+
+  resetNewReal() {
+    this.newSameShipping.set(false);
+    this.newNewsletterChecked.set(false);
+    this.newPromoText.set('');
   }
 }

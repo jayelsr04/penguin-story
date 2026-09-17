@@ -73,6 +73,65 @@ resetForm() {
         <div class="stat" [class.win]="newLit()">{{ newLit() ? 'all 3 fit' : 'click the adapter' }}</div>
         <app-reset-button [disabled]="!newLit()" (reset)="resetLever()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-field">
+          <label class="real-label">Service</label>
+          <div class="real-star-row">
+            @for (n of [1,2,3,4,5]; track n) {
+              <button type="button" class="real-star" [class.filled]="n <= realOldService()" (click)="realOldService.set(n)">★</button>
+            }
+          </div>
+        </div>
+        <div class="real-field">
+          <label class="real-label" for="ad-old-food">Food</label>
+          <select id="ad-old-food" class="real-select" (change)="onOldFoodSelect($event)">
+            <option [selected]="realOldFood() === 0" value="0">Select a rating…</option>
+            @for (n of [1,2,3,4,5]; track n) {
+              <option [selected]="realOldFood() === n" [value]="n">{{ n }}</option>
+            }
+          </select>
+        </div>
+        <div class="real-field">
+          <label class="real-label">Venue</label>
+          <div class="real-check-row">
+            @for (n of [1,2,3,4,5]; track n) {
+              <label class="real-radio-row">
+                <input type="radio" name="ad-old-venue" [checked]="realOldVenue() === n" (change)="realOldVenue.set(n)" />{{ n }}
+              </label>
+            }
+          </div>
+        </div>
+        <app-reset-button [disabled]="!oldRealRated()" (reset)="resetRealOld()" />
+      </div>
+
+      <div new-real class="real-form">
+        <div class="real-field">
+          <label class="real-label">Service</label>
+          <div class="real-star-row">
+            @for (n of [1,2,3,4,5]; track n) {
+              <button type="button" class="real-star" [class.filled]="n <= realNewService()" (click)="setNewRating('service', n)">★</button>
+            }
+          </div>
+        </div>
+        <div class="real-field">
+          <label class="real-label">Food</label>
+          <div class="real-star-row">
+            @for (n of [1,2,3,4,5]; track n) {
+              <button type="button" class="real-star" [class.filled]="n <= realNewFood()" (click)="setNewRating('food', n)">★</button>
+            }
+          </div>
+        </div>
+        <div class="real-field">
+          <label class="real-label">Venue</label>
+          <div class="real-star-row">
+            @for (n of [1,2,3,4,5]; track n) {
+              <button type="button" class="real-star" [class.filled]="n <= realNewVenue()" (click)="setNewRating('venue', n)">★</button>
+            }
+          </div>
+        </div>
+        <app-reset-button [disabled]="!newRealRated()" (reset)="resetRealNew()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -157,5 +216,44 @@ export class AdapterDeskComponent {
 
   resetLever() {
     this.newLit.set(false);
+  }
+
+  realOldService = signal(0);
+  realOldFood = signal(0);
+  realOldVenue = signal(0);
+
+  onOldFoodSelect(event: Event) {
+    this.realOldFood.set(Number((event.target as HTMLSelectElement).value));
+  }
+
+  oldRealRated() {
+    return this.realOldService() > 0 || this.realOldFood() > 0 || this.realOldVenue() > 0;
+  }
+
+  resetRealOld() {
+    this.realOldService.set(0);
+    this.realOldFood.set(0);
+    this.realOldVenue.set(0);
+  }
+
+  realNewService = signal(0);
+  realNewFood = signal(0);
+  realNewVenue = signal(0);
+
+  setNewRating(field: 'service' | 'food' | 'venue', n: number) {
+    this.engaged.set(true);
+    if (field === 'service') this.realNewService.set(n);
+    if (field === 'food') this.realNewFood.set(n);
+    if (field === 'venue') this.realNewVenue.set(n);
+  }
+
+  newRealRated() {
+    return this.realNewService() > 0 || this.realNewFood() > 0 || this.realNewVenue() > 0;
+  }
+
+  resetRealNew() {
+    this.realNewService.set(0);
+    this.realNewFood.set(0);
+    this.realNewVenue.set(0);
   }
 }

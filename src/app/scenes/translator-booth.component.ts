@@ -64,6 +64,31 @@ type SendState = 'idle' | 'sending' | 'done';
         </div>
         <app-reset-button [disabled]="newState() === 'idle'" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-legacy-field">
+          <label class="real-label" for="tb-old-taxid">Tax ID (legacy field)</label>
+          <input id="tb-old-taxid" type="text" class="real-input" placeholder="123456789"
+            [value]="realOldTaxId()" (input)="onRealOldTaxIdInput($event)" />
+        </div>
+        <div class="real-hint">No error shows anywhere, even when this is invalid.</div>
+        <button type="button" class="real-btn" disabled>Submit</button>
+        <app-reset-button [disabled]="!realOldTaxId()" (reset)="resetRealOldTaxId()" />
+      </div>
+
+      <div new-real class="real-form">
+        @if (realNewTaxIdInvalid()) {
+          <div class="real-error-summary">Please fix: Tax ID must be exactly 9 digits.</div>
+        }
+        <div class="real-legacy-field">
+          <label class="real-label" for="tb-new-taxid">Tax ID (legacy field)</label>
+          <input id="tb-new-taxid" type="text" class="real-input" placeholder="123456789"
+            [value]="realNewTaxId()" (input)="onRealNewTaxIdInput($event)" />
+        </div>
+        <div class="real-hint">Same old field, unchanged — the error now reaches the summary above.</div>
+        <button type="button" class="real-btn" disabled>Submit</button>
+        <app-reset-button [disabled]="!realNewTaxId()" (reset)="resetRealNewTaxId()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -171,5 +196,35 @@ export class TranslatorBoothComponent {
 
   resetNew() {
     this.newState.set('idle');
+  }
+
+  realOldTaxId = signal('');
+  realNewTaxId = signal('');
+
+  private taxIdValid(value: string): boolean {
+    return /^\d{9}$/.test(value);
+  }
+
+  onRealOldTaxIdInput(event: Event) {
+    this.realOldTaxId.set((event.target as HTMLInputElement).value);
+  }
+
+  resetRealOldTaxId() {
+    this.realOldTaxId.set('');
+  }
+
+  onRealNewTaxIdInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.realNewTaxId.set(value);
+    if (value) this.engaged.set(true);
+  }
+
+  realNewTaxIdInvalid() {
+    const value = this.realNewTaxId();
+    return !!value && !this.taxIdValid(value);
+  }
+
+  resetRealNewTaxId() {
+    this.realNewTaxId.set('');
   }
 }

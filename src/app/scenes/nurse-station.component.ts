@@ -63,6 +63,35 @@ if (requiredError) {
         <div class="stat" [class.win]="newFound()">{{ newFound() ? '1 step — done' : 'click to ask' }}</div>
         <app-reset-button [disabled]="!newFound()" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="ns-old-pass">Create password</label>
+          <input id="ns-old-pass" type="password" class="real-input" [class.invalid]="oldPasswordFailing()"
+            [value]="realOldPassword()" (input)="onRealOldPasswordInput($event)" />
+        </div>
+        @if (oldPasswordFailing()) {
+          <div class="real-error-summary">
+            Password requirements:
+            <ul>
+              @for (r of ruleChecks; track r.key) { <li>{{ r.label }}</li> }
+            </ul>
+          </div>
+        }
+        <app-reset-button [disabled]="!realOldPassword()" (reset)="resetRealOldPassword()" />
+      </div>
+
+      <div new-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="ns-new-pass">Create password</label>
+          <input id="ns-new-pass" type="password" class="real-input" [class.invalid]="newFailingRules().length > 0"
+            [value]="realNewPassword()" (input)="onRealNewPasswordInput($event)" />
+        </div>
+        @for (r of newFailingRules(); track r.key) {
+          <div class="real-error">{{ r.label }}</div>
+        }
+        <app-reset-button [disabled]="!realNewPassword()" (reset)="resetRealNewPassword()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -153,5 +182,43 @@ export class NurseStationComponent {
 
   resetNew() {
     this.newFound.set(false);
+  }
+
+  ruleChecks = [
+    { key: 'length', label: 'Must be 8+ characters', test: (v: string) => v.length >= 8 },
+    { key: 'number', label: 'Must contain a number', test: (v: string) => /\d/.test(v) },
+    { key: 'symbol', label: 'Must contain a symbol', test: (v: string) => /[^A-Za-z0-9]/.test(v) },
+  ];
+
+  realOldPassword = signal('');
+  realNewPassword = signal('');
+
+  onRealOldPasswordInput(event: Event) {
+    this.realOldPassword.set((event.target as HTMLInputElement).value);
+  }
+
+  oldPasswordFailing() {
+    const value = this.realOldPassword();
+    return !!value && this.ruleChecks.some((r) => !r.test(value));
+  }
+
+  resetRealOldPassword() {
+    this.realOldPassword.set('');
+  }
+
+  onRealNewPasswordInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.realNewPassword.set(value);
+    if (value) this.engaged.set(true);
+  }
+
+  newFailingRules() {
+    const value = this.realNewPassword();
+    if (!value) return [];
+    return this.ruleChecks.filter((r) => !r.test(value));
+  }
+
+  resetRealNewPassword() {
+    this.realNewPassword.set('');
   }
 }

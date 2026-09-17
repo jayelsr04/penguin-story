@@ -76,6 +76,50 @@ class CustomInput {
         <div class="stat" [class.win]="asked()">{{ asked() ? 'Request sent — only Pip can edit' : 'Click a penguin to try' }}</div>
         <app-reset-button [disabled]="!asked()" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="nb-old-name">Display name</label>
+          <input
+            id="nb-old-name"
+            type="text"
+            class="real-input"
+            [class.invalid]="realOldTouched() && !realOldValue()"
+            placeholder="e.g. Pip"
+            [value]="realOldValue()"
+            (input)="onRealOldInput($event)"
+            (blur)="onRealOldBlur()"
+          />
+          @if (realOldTouched() && !realOldValue()) {
+            <div class="real-error">Name is required</div>
+          }
+        </div>
+        <button type="button" class="real-btn real-btn-secondary" (click)="simulateOldTouch()">
+          (simulate another part of the page touching this field)
+        </button>
+        <app-reset-button [disabled]="!realOldValue() && !realOldTouched()" (reset)="resetRealOld()" />
+      </div>
+
+      <div new-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="nb-new-name">Display name</label>
+          <input
+            id="nb-new-name"
+            type="text"
+            class="real-input"
+            [class.invalid]="realNewTouched() && !realNewValue()"
+            placeholder="e.g. Pip"
+            [value]="realNewValue()"
+            (input)="onRealNewInput($event)"
+            (blur)="onRealNewBlur()"
+          />
+          @if (realNewTouched() && !realNewValue()) {
+            <div class="real-error">Name is required</div>
+          }
+        </div>
+        <div class="real-hint">The only way to mark this touched is leaving the field.</div>
+        <app-reset-button [disabled]="!realNewValue() && !realNewTouched()" (reset)="resetRealNew()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -157,5 +201,41 @@ export class NoticeBoardComponent {
 
   resetNew() {
     this.asked.set(false);
+  }
+
+  realOldValue = signal('');
+  realOldTouched = signal(false);
+  realNewValue = signal('');
+  realNewTouched = signal(false);
+
+  onRealOldInput(event: Event) {
+    this.realOldValue.set((event.target as HTMLInputElement).value);
+  }
+
+  onRealOldBlur() {
+    this.realOldTouched.set(true);
+  }
+
+  simulateOldTouch() {
+    this.realOldTouched.set(true);
+  }
+
+  resetRealOld() {
+    this.realOldValue.set('');
+    this.realOldTouched.set(false);
+  }
+
+  onRealNewInput(event: Event) {
+    this.realNewValue.set((event.target as HTMLInputElement).value);
+  }
+
+  onRealNewBlur() {
+    this.realNewTouched.set(true);
+    this.engaged.set(true);
+  }
+
+  resetRealNew() {
+    this.realNewValue.set('');
+    this.realNewTouched.set(false);
   }
 }

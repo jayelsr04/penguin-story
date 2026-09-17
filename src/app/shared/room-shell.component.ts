@@ -1,4 +1,4 @@
-import { Component, EventEmitter, input, Output } from '@angular/core';
+import { Component, EventEmitter, input, Output, signal } from '@angular/core';
 
 export interface HallwayStop {
   wing: 'A' | 'B' | 'C' | 'D';
@@ -49,17 +49,46 @@ export const WING_NAMES: Record<HallwayStop['wing'], string> = {
       </nav>
 
       <div class="room-meta">Wing {{ wing() }} &middot; {{ wingName() }} &mdash; <strong>Stop {{ stopIndex() }} of {{ stops.length }}</strong></div>
-      <h2 class="room-title">{{ title() }}</h2>
+
+      <div class="title-row">
+        <h2 class="room-title">{{ title() }}</h2>
+        <div class="mode-toggle" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            class="mode-tab"
+            [class.active]="mode() === 'story'"
+            [attr.aria-selected]="mode() === 'story'"
+            (click)="mode.set('story')"
+          >🐧 The Story</button>
+          <button
+            type="button"
+            role="tab"
+            class="mode-tab"
+            [class.active]="mode() === 'real'"
+            [attr.aria-selected]="mode() === 'real'"
+            (click)="mode.set('real')"
+          >💻 See It For Real</button>
+        </div>
+      </div>
       <p class="room-sub">{{ subtitle() }}</p>
 
       <div class="compare-grid">
         <div class="panel panel-before">
           <div class="panel-tab">Before</div>
-          <ng-content select="[old]"></ng-content>
+          @if (mode() === 'story') {
+            <ng-content select="[old]"></ng-content>
+          } @else {
+            <ng-content select="[old-real]"></ng-content>
+          }
         </div>
         <div class="panel panel-after">
           <div class="panel-tab">After</div>
-          <ng-content select="[new]"></ng-content>
+          @if (mode() === 'story') {
+            <ng-content select="[new]"></ng-content>
+          } @else {
+            <ng-content select="[new-real]"></ng-content>
+          }
         </div>
         <div class="code-rail">
           <div class="code-block">
@@ -146,13 +175,48 @@ export const WING_NAMES: Record<HallwayStop['wing'], string> = {
       margin-bottom: 10px;
     }
     .room-meta strong { color: var(--accent); font-weight: 700; }
+    .title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
     .room-title {
       font-size: clamp(22px, 2.6vw, 30px);
       font-weight: 800;
       letter-spacing: -0.015em;
-      margin: 0 0 8px;
+      margin: 0;
       color: var(--ink);
       text-wrap: balance;
+    }
+    .mode-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .mode-tab {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-faint);
+      background: transparent;
+      border: none;
+      border-radius: 999px;
+      padding: 7px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .mode-tab:hover { color: var(--ink-muted); }
+    .mode-tab.active {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     }
     .room-sub {
       font-size: 14.5px;
@@ -256,6 +320,8 @@ export class RoomShellComponent {
   @Output() next = new EventEmitter<void>();
   @Output() prev = new EventEmitter<void>();
   @Output() jump = new EventEmitter<number>();
+
+  mode = signal<'story' | 'real'>('story');
 
   stops = HALLWAY_STOPS;
 

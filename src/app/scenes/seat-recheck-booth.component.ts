@@ -100,6 +100,37 @@ onTeamRosterChanged() {
         </div>
         <app-reset-button [disabled]="!newSeatClicked()" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-field">
+          <label class="real-label">Concert ticket quantity</label>
+          <div class="real-check-row">
+            <button type="button" class="real-btn real-btn-secondary" (click)="decOldQty()">−</button>
+            <span>{{ realOldQty() }}</span>
+            <button type="button" class="real-btn real-btn-secondary" (click)="incOldQty()">+</button>
+          </div>
+        </div>
+        <div class="real-hint">{{ realOldSeatsShown() }} seats left</div>
+        <button type="button" class="real-btn real-btn-secondary" (click)="simulateOldBuyer()">(simulate another buyer)</button>
+        <app-reset-button [disabled]="realOldQty() === 1 && realOldReality() === 12" (reset)="resetRealOld()" />
+      </div>
+
+      <div new-real class="real-form">
+        <div class="real-field">
+          <label class="real-label">Concert ticket quantity</label>
+          <div class="real-check-row">
+            <button type="button" class="real-btn real-btn-secondary" (click)="decNewQty()">−</button>
+            <span>{{ realNewQty() }}</span>
+            <button type="button" class="real-btn real-btn-secondary" (click)="incNewQty()">+</button>
+          </div>
+        </div>
+        <div class="real-check-row">
+          <span class="real-hint">{{ realNewSeatsShown() }} seats left</span>
+          <button type="button" class="real-btn" [class.pulse]="realNewSeatsShown() !== realNewReality()" (click)="refreshNewAvailability()">Refresh availability</button>
+        </div>
+        <button type="button" class="real-btn real-btn-secondary" (click)="simulateNewBuyer()">(simulate another buyer)</button>
+        <app-reset-button [disabled]="realNewQty() === 1 && realNewReality() === 12 && realNewSeatsShown() === 12" (reset)="resetRealNew()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -229,5 +260,54 @@ export class SeatRecheckBoothComponent {
   resetNew() {
     this.newSeatClicked.set(false);
     this.newFormSynced.set(false);
+  }
+
+  realOldQty = signal(1);
+  realOldSeatsShown = signal(12);
+  realOldReality = signal(12);
+
+  realNewQty = signal(1);
+  realNewSeatsShown = signal(12);
+  realNewReality = signal(12);
+
+  incOldQty() {
+    this.realOldQty.update((v) => Math.min(8, v + 1));
+  }
+
+  decOldQty() {
+    this.realOldQty.update((v) => Math.max(1, v - 1));
+  }
+
+  simulateOldBuyer() {
+    // Reality drops, but nothing in the old version ever rereads it.
+    this.realOldReality.update((v) => Math.max(0, v - 1));
+  }
+
+  resetRealOld() {
+    this.realOldQty.set(1);
+    this.realOldReality.set(12);
+  }
+
+  incNewQty() {
+    this.realNewQty.update((v) => Math.min(8, v + 1));
+  }
+
+  decNewQty() {
+    this.realNewQty.update((v) => Math.max(1, v - 1));
+  }
+
+  simulateNewBuyer() {
+    this.realNewReality.update((v) => Math.max(0, v - 1));
+  }
+
+  refreshNewAvailability() {
+    this.engaged.set(true);
+    this.realNewSeatsShown.set(this.realNewReality());
+  }
+
+  resetRealNew() {
+    this.realNewQty.set(1);
+    this.realNewReality.set(12);
+    this.realNewSeatsShown.set(12);
   }
 }

@@ -77,6 +77,41 @@ type TriState = 'idle' | 'checking' | 'done';
         <button type="button" class="tile-btn action-btn" [disabled]="newFishState() !== 'idle'" (click)="askNew()">Ask both</button>
         <app-reset-button [disabled]="newFishState() === 'idle'" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="wg-old-username">Choose a username</label>
+          <input id="wg-old-username" type="text" class="real-input" [value]="realOldUsername()" (input)="onRealOldUsernameInput($event)" />
+        </div>
+        @if (realOldMsg() === 'short') {
+          <div class="real-error">At least 3 characters</div>
+        } @else if (realOldMsg() === 'checking') {
+          <div class="real-hint">checking availability…</div>
+        } @else if (realOldMsg() === 'available') {
+          <div class="real-hint">Available ✓</div>
+        } @else if (realOldMsg() === 'taken') {
+          <div class="real-error">Already taken</div>
+        }
+        <app-reset-button [disabled]="!realOldUsername()" (reset)="resetRealOldUsername()" />
+      </div>
+
+      <div new-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="wg-new-username">Choose a username</label>
+          <input id="wg-new-username" type="text" class="real-input" [value]="realNewUsername()" (input)="onRealNewUsernameInput($event)" />
+        </div>
+        @if (realNewShort()) {
+          <div class="real-error">At least 3 characters</div>
+        }
+        @if (realNewAvail() === 'checking') {
+          <div class="real-hint">checking availability…</div>
+        } @else if (realNewAvail() === 'available') {
+          <div class="real-hint">Available ✓</div>
+        } @else if (realNewAvail() === 'taken') {
+          <div class="real-error">Already taken</div>
+        }
+        <app-reset-button [disabled]="!realNewUsername()" (reset)="resetRealNewUsername()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -163,5 +198,59 @@ export class WaitingGameComponent {
   resetNew() {
     this.newNameDone.set(false);
     this.newFishState.set('idle');
+  }
+
+  realOldUsername = signal('');
+  realOldMsg = signal<'idle' | 'short' | 'checking' | 'available' | 'taken'>('idle');
+  private realOldTimer?: ReturnType<typeof setTimeout>;
+
+  realNewUsername = signal('');
+  realNewShort = signal(false);
+  realNewAvail = signal<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  private realNewTimer?: ReturnType<typeof setTimeout>;
+
+  onRealOldUsernameInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.realOldUsername.set(value);
+    clearTimeout(this.realOldTimer);
+    this.realOldMsg.set('idle');
+    if (!value) return;
+    // Bug: even the instant length check is stuck behind the same debounce.
+    this.realOldTimer = setTimeout(() => {
+      if (value.length < 3) {
+        this.realOldMsg.set('short');
+        return;
+      }
+      this.realOldMsg.set('checking');
+      setTimeout(() => this.realOldMsg.set(value.toLowerCase() === 'admin' ? 'taken' : 'available'), 500);
+    }, 600);
+  }
+
+  resetRealOldUsername() {
+    clearTimeout(this.realOldTimer);
+    this.realOldUsername.set('');
+    this.realOldMsg.set('idle');
+  }
+
+  onRealNewUsernameInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.realNewUsername.set(value);
+    this.realNewShort.set(!!value && value.length < 3);
+    clearTimeout(this.realNewTimer);
+    this.realNewAvail.set('idle');
+    if (value.length >= 3) {
+      this.realNewTimer = setTimeout(() => {
+        this.engaged.set(true);
+        this.realNewAvail.set('checking');
+        setTimeout(() => this.realNewAvail.set(value.toLowerCase() === 'admin' ? 'taken' : 'available'), 500);
+      }, 600);
+    }
+  }
+
+  resetRealNewUsername() {
+    clearTimeout(this.realNewTimer);
+    this.realNewUsername.set('');
+    this.realNewShort.set(false);
+    this.realNewAvail.set('idle');
   }
 }

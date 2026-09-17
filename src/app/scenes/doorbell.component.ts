@@ -64,6 +64,26 @@ debounce(f.guestName, 400, 'blur');
         <div class="stat" [class.win]="newResolved()">{{ newStatus() }}</div>
         <app-reset-button [disabled]="!newResolved() && !newText()" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="db-old-phone">Phone number</label>
+          <input id="db-old-phone" type="tel" class="real-input" placeholder="(555) 123-4567"
+            [value]="realOldPhone()" (input)="onRealOldPhoneInput($event)" (blur)="onRealOldPhoneBlur()" />
+        </div>
+        <div class="real-hint">{{ realOldFormatted() ? 'formatted ✓' : 'raw digits' }}</div>
+        <app-reset-button [disabled]="!realOldPhone()" (reset)="resetRealOldPhone()" />
+      </div>
+
+      <div new-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="db-new-phone">Phone number</label>
+          <input id="db-new-phone" type="tel" class="real-input" placeholder="(555) 123-4567"
+            [value]="realNewPhone()" (input)="onRealNewPhoneInput($event)" (blur)="onRealNewPhoneBlur()" />
+        </div>
+        <div class="real-hint">{{ realNewFormatted() ? 'formatted ✓' : 'raw digits' }}</div>
+        <app-reset-button [disabled]="!realNewPhone()" (reset)="resetRealNewPhone()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -186,5 +206,59 @@ export class DoorbellComponent {
     if (this.newPending()) return 'checking…';
     if (this.newResolved()) return 'checked ✓';
     return this.newText() ? 'still writing… (won\'t check yet)' : 'sign the book, then step away';
+  }
+
+  realOldPhone = signal('');
+  realOldFormatted = signal(false);
+  private realOldPhoneTimer?: ReturnType<typeof setTimeout>;
+
+  realNewPhone = signal('');
+  realNewFormatted = signal(false);
+
+  private formatPhone(raw: string): string {
+    const digits = raw.replace(/\D/g, '').slice(0, 10);
+    if (digits.length < 4) return digits;
+    if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  onRealOldPhoneInput(event: Event) {
+    const raw = (event.target as HTMLInputElement).value;
+    this.realOldPhone.set(raw);
+    this.realOldFormatted.set(false);
+    clearTimeout(this.realOldPhoneTimer);
+    // Old debounce mode only fires after a pause in typing — blurring away
+    // before that pause elapses cancels the reformat entirely.
+    this.realOldPhoneTimer = setTimeout(() => {
+      this.realOldPhone.set(this.formatPhone(raw));
+      this.realOldFormatted.set(true);
+    }, 400);
+  }
+
+  onRealOldPhoneBlur() {
+    clearTimeout(this.realOldPhoneTimer);
+  }
+
+  resetRealOldPhone() {
+    clearTimeout(this.realOldPhoneTimer);
+    this.realOldPhone.set('');
+    this.realOldFormatted.set(false);
+  }
+
+  onRealNewPhoneInput(event: Event) {
+    this.realNewPhone.set((event.target as HTMLInputElement).value);
+    this.realNewFormatted.set(false);
+  }
+
+  onRealNewPhoneBlur() {
+    if (!this.realNewPhone()) return;
+    this.realNewPhone.set(this.formatPhone(this.realNewPhone()));
+    this.realNewFormatted.set(true);
+    this.engaged.set(true);
+  }
+
+  resetRealNewPhone() {
+    this.realNewPhone.set('');
+    this.realNewFormatted.set(false);
   }
 }

@@ -92,6 +92,35 @@ const CASES: DateCase[] = [
         <div class="stat" [class.win]="newAccepted() === 1">{{ newAccepted() }} / 3 accepted</div>
         <app-reset-button [disabled]="newTestedCount() === 0" (reset)="resetNew()" />
       </div>
+
+      <div old-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="bb-old-date">Appointment date</label>
+          <input id="bb-old-date" type="date" class="real-input" [value]="realOldDate()" (change)="onRealOldDateChange($event)" />
+        </div>
+        @if (realOldResult() === 'tooEarly') {
+          <div class="real-error">Please pick a date on or after today.</div>
+        } @else if (realOldResult() === 'ok') {
+          <div class="real-hint">Looks good ✓</div>
+        }
+        <app-reset-button [disabled]="!realOldDate()" (reset)="resetRealOld()" />
+      </div>
+
+      <div new-real class="real-form">
+        <div class="real-field">
+          <label class="real-label" for="bb-new-date">Appointment date</label>
+          <input id="bb-new-date" type="date" class="real-input" [class.invalid]="realNewResult() === 'tooEarly' || realNewResult() === 'tooLate'"
+            [value]="realNewDate()" (change)="onRealNewDateChange($event)" />
+        </div>
+        @if (realNewResult() === 'tooEarly') {
+          <div class="real-error">Please pick a date on or after today.</div>
+        } @else if (realNewResult() === 'tooLate') {
+          <div class="real-error">Please pick a date within the next 90 days.</div>
+        } @else if (realNewResult() === 'ok') {
+          <div class="real-hint">Looks good ✓</div>
+        }
+        <app-reset-button [disabled]="!realNewDate()" (reset)="resetRealNew()" />
+      </div>
     </app-room-shell>
   `,
   styles: [`
@@ -190,5 +219,51 @@ export class BouncerBoothComponent {
 
   resetNew() {
     this.newResults.set({ early: null, valid: null, future: null });
+  }
+
+  private today = new Date(new Date().toDateString());
+  private maxRealNewDate = new Date(this.today.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  realOldDate = signal('');
+  realOldResult = signal<Verdict>(null);
+  realNewDate = signal('');
+  realNewResult = signal<Verdict>(null);
+
+  onRealOldDateChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.realOldDate.set(value);
+    if (!value) {
+      this.realOldResult.set(null);
+      return;
+    }
+    this.realOldResult.set(new Date(value) < this.today ? 'tooEarly' : 'ok');
+  }
+
+  resetRealOld() {
+    this.realOldDate.set('');
+    this.realOldResult.set(null);
+  }
+
+  onRealNewDateChange(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.realNewDate.set(value);
+    if (!value) {
+      this.realNewResult.set(null);
+      return;
+    }
+    const date = new Date(value);
+    this.engaged.set(true);
+    if (date < this.today) {
+      this.realNewResult.set('tooEarly');
+    } else if (date > this.maxRealNewDate) {
+      this.realNewResult.set('tooLate');
+    } else {
+      this.realNewResult.set('ok');
+    }
+  }
+
+  resetRealNew() {
+    this.realNewDate.set('');
+    this.realNewResult.set(null);
   }
 }
